@@ -1,0 +1,262 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  background: #0a0a1a;
+  color: #e8e8f0;
+  min-height: 100vh;
+}
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; }
+
+/* Layout */
+#app { display: flex; flex-direction: column; min-height: 100vh; }
+.main-content { flex: 1; max-width: 960px; margin: 0 auto; padding: 16px; width: 100%; }
+
+/* Header */
+.app-header {
+  background: linear-gradient(135deg, #1a0a2e 0%, #16213e 100%);
+  border-bottom: 2px solid #e63946;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+}
+.header-logo {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #e63946;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.header-logo span { color: #ffd700; }
+.header-nav { display: flex; gap: 4px; flex: 1; justify-content: center; }
+.nav-link {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #aab;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-link:hover, .nav-link.active { background: #e6394622; color: #fff; }
+.header-balance {
+  background: #1e1e3a;
+  border: 1px solid #ffd700;
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffd700;
+  white-space: nowrap;
+}
+
+/* Footer */
+.app-footer {
+  background: #0d0d1f;
+  border-top: 1px solid #222;
+  text-align: center;
+  padding: 12px;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* Cards */
+.card {
+  background: #12122a;
+  border: 1px solid #2a2a4a;
+  border-radius: 10px;
+  padding: 16px;
+}
+.card:hover { border-color: #4a4a7a; }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+.btn-primary { background: #e63946; color: #fff; }
+.btn-primary:hover { background: #c1121f; }
+.btn-primary:disabled { background: #666; cursor: not-allowed; }
+.btn-secondary { background: #2a2a4a; color: #ccc; border: 1px solid #4a4a7a; }
+.btn-secondary:hover { background: #3a3a6a; }
+.btn-gold { background: #ffd700; color: #000; }
+.btn-gold:hover { background: #e5c100; }
+.btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+
+/* Status badges */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.badge-upcoming { background: #1e3a5f; color: #5bc0eb; }
+.badge-open { background: #1e5f2a; color: #4ade80; animation: pulse-green 1.5s infinite; }
+.badge-closed { background: #3a3a1e; color: #aaa; }
+.badge-result { background: #3a1e1e; color: #f87171; }
+.badge-giii { background: #1e1e5f; color: #a78bfa; }
+.badge-gii { background: #2e1e5f; color: #c4b5fd; }
+.badge-gi { background: #4e1e5f; color: #e9d5ff; }
+.badge-win { background: #14532d; color: #4ade80; }
+.badge-lose { background: #450a0a; color: #f87171; }
+.badge-pending { background: #1c3252; color: #93c5fd; }
+
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Tables */
+.horse-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.horse-table th {
+  background: #1e1e3a;
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #aab;
+  border-bottom: 1px solid #3a3a5a;
+}
+.horse-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #1e1e3a;
+  text-align: center;
+}
+.horse-table tr:hover td { background: #1a1a32; }
+.horse-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #fff;
+}
+.pop-1 { background: #e63946; }
+.pop-2 { background: #e68a00; }
+.pop-3 { background: #1a7a4a; }
+.pop-other { background: #444; }
+
+/* Odds */
+.odds-val { font-weight: 700; }
+.odds-low { color: #f87171; }
+.odds-mid { color: #fbbf24; }
+.odds-high { color: #aab; }
+
+/* Select button */
+.select-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #4a4a7a;
+  background: #1e1e3a;
+  color: #aab;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.select-btn.selected {
+  background: #e63946;
+  border-color: #e63946;
+  color: #fff;
+}
+.select-btn:hover:not(.selected) { background: #2a2a4a; }
+
+/* Bet panel */
+.bet-panel {
+  background: #0d0d20;
+  border: 1px solid #3a3a6a;
+  border-radius: 10px;
+  padding: 16px;
+}
+.bet-type-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.bet-type-tab {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #3a3a5a;
+  background: #1a1a30;
+  color: #aab;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.bet-type-tab.active { background: #e63946; border-color: #e63946; color: #fff; }
+.bet-type-tab:hover:not(.active) { background: #2a2a40; }
+
+.amount-input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.amount-input {
+  background: #1a1a30;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  width: 120px;
+}
+.amount-quick { display: flex; gap: 4px; flex-wrap: wrap; }
+.amount-quick button {
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid #3a3a5a;
+  background: #1a1a30;
+  color: #aab;
+  font-size: 0.78rem;
+}
+.amount-quick button:hover { background: #2a2a40; }
+
+/* Race result display */
+.result-box {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: #1a1a30;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.result-place { text-align: center; }
+.result-place .place-label { font-size: 0.7rem; color: #888; }
+.result-place .place-num { font-size: 1.2rem; font-weight: 800; }
+.first-place { color: #ffd700; }
+.second-place { color: #c0c0c0; }
+.third-place { color: #cd7f32; }
+
+/* Utilities */
+.text-gold { color: #ffd700; }
+.text-red { color: #e63946; }
+.text-green { color: #4ade80; }
+.text-muted { color: #888; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-12 { margin-bottom: 12px; }
+
+/* Page titles */
+.page-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
