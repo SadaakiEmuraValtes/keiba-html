@@ -1,139 +1,153 @@
 import { reactive } from 'vue'
+import { TEST_USERS } from '../data/users.js'
+import { DATE_SCENARIOS, makeRaceKey, getRaceInfo, getRaceStatus } from '../data/scenarios.js'
+import { generateHorses, generateResult, checkComboWin, calcComboPayout } from '../data/masterData.js'
 
-const STORAGE_KEY = 'keiba_store'
+const SESSION_KEY = 'keibanet_session'
+const ACCOUNTS_KEY = 'keibanet_accounts'
 
-function loadFromStorage() {
-  try {
-    const data = sessionStorage.getItem(STORAGE_KEY)
-    return data ? JSON.parse(data) : null
-  } catch {
-    return null
-  }
+function loadSession() {
+  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || '{}') } catch { return {} }
+}
+function loadAccounts() {
+  try { return JSON.parse(sessionStorage.getItem(ACCOUNTS_KEY) || '{}') } catch { return {} }
+}
+function saveSession(s) {
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)) } catch {}
+}
+function saveAccounts(a) {
+  try { sessionStorage.setItem(ACCOUNTS_KEY, JSON.stringify(a)) } catch {}
 }
 
-function saveToStorage(state) {
-  try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-      balance: state.balance,
-      bets: state.bets,
-    }))
-  } catch {}
-}
+const sess = loadSession()
+const accs = loadAccounts()
 
-const saved = loadFromStorage()
-
-export const store = reactive({
-  balance: saved?.balance ?? 10000, // 所持金（円）
-  bets: saved?.bets ?? [],          // 投票履歴
-
-  // 投票する
-  placeBet(raceId, raceName, betType, horses, amount) {
-    const bet = {
-      id: Date.now(),
-      raceId,
-      raceName,
-      betType,
-      horses,    // [馬番号, ...]
-      amount,
-      status: 'pending', // pending / win / lose
-      payout: 0,
-      placedAt: new Date().toISOString(),
-    }
-    this.bets.push(bet)
-    this.balance -= amount
-    saveToStorage(this)
-    return bet
-  },
-
-  // レース結果を確定する（result: { first, second, third }）
-  settleRace(raceId, result, horses) {
-    this.bets
-      .filter(b => b.raceId === raceId && b.status === 'pending')
-      .forEach(bet => {
-        const win = checkWin(bet.betType, bet.horses, result)
-        if (win) {
-          const payout = calcPayout(bet.betType, bet.horses, horses, bet.amount)
-          bet.payout = payout
-          bet.status = 'win'
-          this.balance += payout
-        } else {
-          bet.status = 'lose'
+// 精算処理
+function settleBets(acc, raceKey, result, horses) {
+  acc.bets
+    .filter(b => b.raceKey === raceKey && b.status === 'pending')
+    .forEach(bet => {
+      const typeName = bet.betTypeStr.split('(')[0]
+      let payout = 0
+      let anyWin = false
+      bet.combos.forEach(comboStr => {
+        const nums = comboStr.split('→').map(Number)
+        if (checkComboWin(typeName, nums, result)) {
+          anyWin = true
+          payout += calcComboPayout(typeName, result, horses, bet.amountPerCombo)
         }
       })
-    saveToStorage(this)
+      bet.status = anyWin ? 'win' : 'lose'
+      bet.payout = payout
+      if (anyWin) acc.balance += payout
+    })
+}
+
+export const store = reactive({
+  selectedDateIdx: sess.selectedDateIdx ?? 0,
+  virtualHour:     sess.virtualHour     ?? 10,
+  currentUserId:   sess.currentUserId   ?? null,
+  _accounts: accs,
+
+  // ---- getter ----
+  get currentUser() {
+    return TEST_USERS.find(u => u.id === this.currentUserId) ?? null
+  },
+  get currentAccount() {
+    return this._accounts[this.currentUserId] ?? null
+  },
+  get balance() {
+    return this.currentAccount?.balance ?? 0
+  },
+  get bets() {
+    return this.currentAccount?.bets ?? []
+  },
+  get isLoggedIn() {
+    return this.currentUserId !== null
   },
 
-  // 残高チャージ
-  addBalance(amount) {
-    this.balance += amount
-    saveToStorage(this)
+  // ---- 認証 ----
+  login(loginId, password) {
+    const user = TEST_USERS.find(u => u.loginId === loginId && u.password === password)
+    if (!user) return false
+    this.currentUserId = user.id
+    if (!this._accounts[user.id]) {
+      this._accounts[user.id] = { balance: 0, bets: [], settledKeys: [] }
+    }
+    this._saveSession()
+    return true
+  },
+  logout() {
+    this.currentUserId = null
+    this._saveSession()
+  },
+
+  // ---- 残高チャージ ----
+  charge(amount) {
+    if (!this.currentAccount) return
+    this._accounts[this.currentUserId].balance += amount
+    saveAccounts(this._accounts)
+  },
+
+  // ---- 投票 ----
+  placeBet(raceKey, raceLabel, betTypeStr, combos, amountPerCombo) {
+    if (!this.currentAccount) return false
+    const total = combos.length * amountPerCombo
+    if (this.balance < total) return false
+    this._accounts[this.currentUserId].bets.push({
+      id: Date.now(),
+      raceKey, raceLabel, betTypeStr,
+      combos, amountPerCombo, total,
+      status: 'pending', payout: 0,
+      placedAt: new Date().toISOString(),
+    })
+    this._accounts[this.currentUserId].balance -= total
+    saveAccounts(this._accounts)
+    return true
+  },
+
+  // ---- 仮想時刻設定 ----
+  setVirtualHour(h) {
+    const prev = this.virtualHour
+    this.virtualHour = h
+    if (h > prev && this.isLoggedIn) this._settleAllDue()
+    this._saveSession()
+  },
+
+  setDateIdx(idx) {
+    this.selectedDateIdx = idx
+    this.virtualHour = 10
+    this._saveSession()
+  },
+
+  // ---- 全完了レース精算 ----
+  _settleAllDue() {
+    const acc = this._accounts[this.currentUserId]
+    if (!acc) return
+    const scenario = DATE_SCENARIOS[this.selectedDateIdx]
+    if (!scenario) return
+    scenario.venues.forEach((_, vSeqIdx) => {
+      for (let round = 1; round <= 12; round++) {
+        const info = getRaceInfo(this.selectedDateIdx, vSeqIdx, round)
+        if (!info) continue
+        const status = getRaceStatus(info.startHour, this.virtualHour)
+        if (status !== 'result') continue
+        const raceKey = makeRaceKey(this.selectedDateIdx, vSeqIdx, round)
+        if (acc.settledKeys.includes(raceKey)) continue
+        const horses = generateHorses(raceKey, info.count)
+        const result = generateResult(raceKey, info.count, horses)
+        settleBets(acc, raceKey, result, horses)
+        acc.settledKeys.push(raceKey)
+      }
+    })
+    saveAccounts(this._accounts)
+  },
+
+  _saveSession() {
+    saveSession({
+      selectedDateIdx: this.selectedDateIdx,
+      virtualHour: this.virtualHour,
+      currentUserId: this.currentUserId,
+    })
   },
 })
-
-function checkWin(betType, selectedHorses, result) {
-  const [s1, s2, s3] = selectedHorses
-  switch (betType) {
-    case '単勝': return s1 === result.first
-    case '複勝': return [result.first, result.second, result.third].includes(s1)
-    case '馬連': {
-      const pair = new Set([s1, s2])
-      return pair.has(result.first) && pair.has(result.second)
-    }
-    case '馬単': return s1 === result.first && s2 === result.second
-    case 'ワイド': {
-      const pair = new Set([s1, s2])
-      const top3 = [result.first, result.second, result.third]
-      return top3.filter(h => pair.has(h)).length === 2
-    }
-    case '3連複': {
-      const sel = new Set([s1, s2, s3])
-      const top3 = new Set([result.first, result.second, result.third])
-      return [...sel].every(h => top3.has(h)) && [...top3].every(h => sel.has(h))
-    }
-    case '3連単':
-      return s1 === result.first && s2 === result.second && s3 === result.third
-    default:
-      return false
-  }
-}
-
-function calcPayout(betType, selectedHorses, horses, amount) {
-  const multipliers = {
-    '単勝': () => {
-      const h = horses.find(h => h.number === selectedHorses[0])
-      return h ? h.odds : 1
-    },
-    '複勝': () => {
-      const h = horses.find(h => h.number === selectedHorses[0])
-      return h ? h.odds * 0.4 : 1
-    },
-    '馬連': () => {
-      const h1 = horses.find(h => h.number === selectedHorses[0])
-      const h2 = horses.find(h => h.number === selectedHorses[1])
-      return h1 && h2 ? h1.odds * h2.odds * 0.1 + 3 : 1
-    },
-    '馬単': () => {
-      const h1 = horses.find(h => h.number === selectedHorses[0])
-      const h2 = horses.find(h => h.number === selectedHorses[1])
-      return h1 && h2 ? h1.odds * h2.odds * 0.15 + 4 : 1
-    },
-    'ワイド': () => {
-      const h1 = horses.find(h => h.number === selectedHorses[0])
-      const h2 = horses.find(h => h.number === selectedHorses[1])
-      return h1 && h2 ? h1.odds * h2.odds * 0.06 + 2 : 1
-    },
-    '3連複': () => {
-      const hs = selectedHorses.map(n => horses.find(h => h.number === n))
-      const base = hs.reduce((acc, h) => acc * (h ? h.odds : 1), 1)
-      return base * 0.02 + 10
-    },
-    '3連単': () => {
-      const hs = selectedHorses.map(n => horses.find(h => h.number === n))
-      const base = hs.reduce((acc, h) => acc * (h ? h.odds : 1), 1)
-      return base * 0.04 + 20
-    },
-  }
-  const fn = multipliers[betType]
-  const multiplier = fn ? fn() : 1
-  return Math.floor(amount * multiplier / 100) * 100
-}
