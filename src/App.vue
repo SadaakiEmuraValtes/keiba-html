@@ -22,8 +22,7 @@ const balanceDisplay = computed(() => store.balance.toLocaleString('ja-JP') + '�
 
       <nav class="header-nav">
         <RouterLink to="/" class="nav-link" :class="{ active: route.path === '/' }">レース一覧</RouterLink>
-        <RouterLink to="/win5" class="nav-link nav-win5" :class="{ active: route.path === '/win5' }">WIN5</RouterLink>
-        <RouterLink to="/my-page" class="nav-link" :class="{ active: route.path === '/my-page' }">マイページ</RouterLink>
+<RouterLink to="/my-page" class="nav-link" :class="{ active: route.path === '/my-page' }">マイページ</RouterLink>
         <RouterLink to="/help" class="nav-link" :class="{ active: route.path === '/help' }">ヘルプ</RouterLink>
       </nav>
 
@@ -63,6 +62,4 @@ const balanceDisplay = computed(() => store.balance.toLocaleString('ja-JP') + '�
   background: #16a34a; color: #fff; font-size: 0.82rem; font-weight: 700;
 }
 .btn-login:hover { background: #15803d; }
-.nav-win5 { color: #d97706; font-weight: 800; }
-.nav-win5:hover, .nav-win5.active { background: #fefce8; color: #92400e; }
 </style>

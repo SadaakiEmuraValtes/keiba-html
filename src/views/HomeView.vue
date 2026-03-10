@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { store } from '../store/index.js'
-import { DATE_SCENARIOS, makeRaceKey, getRaceInfo, getRaceStatus } from '../data/scenarios.js'
+import { DATE_SCENARIOS, makeRaceKey, getRaceInfo, getRaceStatus, getWin5RaceKeys, parseRaceKey } from '../data/scenarios.js'
+import { generateHorses, generateResult } from '../data/masterData.js'
 
 const router = useRouter()
 
@@ -91,6 +92,79 @@ const featuredRaces = computed(() => {
   })
   return list.sort((a, b) => a.startHour - b.startHour)
 })
+
+// ===== WIN5 =====
+const win5Keys = computed(() => getWin5RaceKeys(store.selectedDateIdx))
+
+const win5Races = computed(() => {
+  return win5Keys.value.map((key, idx) => {
+    const { dateIdx, venueSeqIdx, round } = parseRaceKey(key)
+    const info = getRaceInfo(dateIdx, venueSeqIdx, round)
+    if (!info) return null
+    const status = getRaceStatus(info.startHour, store.virtualHour)
+    const horses = generateHorses(key, info.count)
+    const result = status === 'result' ? generateResult(key, info.count, horses) : null
+    return { key, info, status, horses, result, raceNo: idx + 1 }
+  }).filter(Boolean)
+})
+
+const win5Picks = ref([[], [], [], [], []])
+watch(() => store.selectedDateIdx, () => { win5Picks.value = [[], [], [], [], []] })
+
+function toggleWin5Pick(raceIdx, num) {
+  const p = [...win5Picks.value[raceIdx]]
+  const i = p.indexOf(num)
+  if (i >= 0) p.splice(i, 1)
+  else p.push(num)
+  win5Picks.value = win5Picks.value.map((arr, idx) => idx === raceIdx ? p : arr)
+}
+function isWin5Picked(raceIdx, num) { return win5Picks.value[raceIdx]?.includes(num) }
+
+function cartesian(arrays) {
+  return arrays.reduce((acc, arr) => {
+    const res = []
+    acc.forEach(a => arr.forEach(b => res.push([...a, b])))
+    return res
+  }, [[]])
+}
+
+const win5TotalCombos = computed(() => {
+  if (win5Picks.value.some(p => p.length === 0)) return 0
+  return win5Picks.value.reduce((t, p) => t * p.length, 1)
+})
+const win5AllCombos = computed(() => {
+  if (win5TotalCombos.value === 0) return []
+  return cartesian(win5Picks.value).map(c => c.join('-'))
+})
+
+const win5BetAmount = ref(100)
+const WIN5_QUICK_AMOUNTS = [100, 300, 500, 1000, 2000, 5000]
+const win5TotalBet = computed(() => win5TotalCombos.value * win5BetAmount.value)
+const allWin5Open = computed(() => win5Races.value.length === 5 && win5Races.value.every(r => r.status === 'open'))
+const canWin5Bet = computed(() =>
+  store.isLoggedIn && allWin5Open.value && win5TotalCombos.value > 0 &&
+  win5BetAmount.value >= 100 && win5TotalBet.value <= store.balance
+)
+const win5BetMsg = ref('')
+const win5BetOk  = ref(false)
+
+function placeWin5Bet() {
+  if (!canWin5Bet.value) return
+  store.placeWin5Bet(win5Keys.value, win5AllCombos.value, win5BetAmount.value)
+  win5BetMsg.value = `WIN5 購入完了！${win5TotalCombos.value}通り × ¥${win5BetAmount.value.toLocaleString()} = ¥${win5TotalBet.value.toLocaleString()}`
+  win5BetOk.value = true
+  win5Picks.value = [[], [], [], [], []]
+  setTimeout(() => { win5BetMsg.value = ''; win5BetOk.value = false }, 6000)
+}
+
+function win5Numpad(d) {
+  if (d === 'C') { win5BetAmount.value = 100; return }
+  if (d === '00') { win5BetAmount.value = Math.min(win5BetAmount.value * 100, 999900); return }
+  const s = String(win5BetAmount.value / 100)
+  const next = parseInt((s === '1' && win5BetAmount.value === 100 ? '' : s) + d, 10) * 100
+  if (!isNaN(next) && next >= 100) win5BetAmount.value = Math.min(next, 999900)
+}
+function win5OddsClass(odds) { return odds < 10 ? 'odds-red' : 'odds-black' }
 </script>
 
 <template>
@@ -188,6 +262,102 @@ const featuredRaces = computed(() => {
         </button>
       </div>
     </div>
+
+    <!-- ===== WIN5 ===== -->
+    <div v-if="win5Keys.length === 5" class="win5-wrap mt-16">
+      <div class="win5-hdr">
+        <span class="win5-label">WIN5</span>
+        <span class="win5-desc">5レースすべての1着馬を当てる特別式。複数頭選択可。</span>
+      </div>
+
+      <!-- 5レース横並び -->
+      <div class="win5-races-scroll">
+        <div class="win5-races-grid">
+          <div v-for="(race, ri) in win5Races" :key="race.key" class="win5-race-col">
+            <div class="w5-head">
+              <span class="w5-no">W{{ race.raceNo }}</span>
+              <span class="w5-status" :class="'w5s-'+race.status">
+                {{ race.status === 'open' ? '受付中' : race.status === 'closed' ? '締切' : '確定' }}
+              </span>
+              <div class="w5-venue">{{ race.info.venueName }}{{ race.info.round }}R</div>
+              <div class="w5-grade-name">{{ race.info.grade }}</div>
+              <div class="w5-time">{{ race.info.time }}</div>
+            </div>
+
+            <div v-if="race.result" class="w5-result">
+              <span class="w5-result-num">{{ race.result.first }}番</span>
+              <span class="w5-result-name">{{ race.horses.find(h => h.number===race.result.first)?.name }}</span>
+              <span :class="win5Picks[ri].includes(race.result.first) ? 'w5-hit' : 'w5-miss'">
+                {{ win5Picks[ri].includes(race.result.first) ? '✓' : '✗' }}
+              </span>
+            </div>
+
+            <div class="w5-horses">
+              <button
+                v-for="h in race.horses" :key="h.number"
+                class="w5-btn"
+                :class="{
+                  'w5-picked':   isWin5Picked(ri, h.number),
+                  'w5-winner':   race.result?.first === h.number,
+                  'w5-disabled': race.status !== 'open',
+                }"
+                :disabled="race.status !== 'open'"
+                @click="toggleWin5Pick(ri, h.number)"
+              >
+                <span class="w5-num">{{ h.number }}</span>
+                <span class="w5-name">{{ h.name }}</span>
+                <span class="w5-odds" :class="win5OddsClass(h.odds)">{{ h.odds.toFixed(1) }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 購入パネル -->
+      <div v-if="!store.isLoggedIn" class="card mt-8" style="text-align:center;padding:14px;">
+        <p class="text-muted mb-8">WIN5投票にはログインが必要です。</p>
+        <button class="btn btn-primary btn-sm" @click="router.push('/login')">ログインへ</button>
+      </div>
+      <div v-else-if="!allWin5Open" class="card mt-8">
+        <p class="text-muted" style="font-size:0.82rem;">全5レースが投票受付中のときのみ購入できます。</p>
+      </div>
+      <div v-else class="card mt-8">
+        <div class="w5-combo-row mb-8">
+          <span class="w5-combo-label">組み合わせ数:</span>
+          <span class="w5-combo-val">{{ win5TotalCombos }}</span>
+          <span v-if="win5TotalCombos === 0" class="text-muted" style="font-size:0.75rem;">（各レースから1頭以上選択）</span>
+        </div>
+        <div class="w5-purchase-top mb-8">
+          <div class="numpad-area">
+            <div class="numpad-label">1点あたり（100円単位）</div>
+            <div class="numpad-display">¥{{ win5BetAmount.toLocaleString() }}</div>
+            <div class="numpad-grid">
+              <button v-for="d in ['1','2','3','4','5','6','7','8','9','0','00','C']" :key="d" class="numpad-btn" @click="win5Numpad(d)">{{ d }}</button>
+            </div>
+            <div class="quick-amounts mt-6">
+              <button v-for="a in WIN5_QUICK_AMOUNTS" :key="a" class="quick-btn" @click="win5BetAmount=a">{{ a }}</button>
+            </div>
+          </div>
+          <div class="w5-purchase-right">
+            <div class="w5-pr-row"><span>1点</span><span>¥{{ win5BetAmount.toLocaleString() }}</span></div>
+            <div class="w5-pr-row"><span>点数</span><span>{{ win5TotalCombos }}通り</span></div>
+            <div class="w5-pr-total-row"><span>合計</span><span class="w5-pr-total">¥{{ win5TotalBet.toLocaleString() }}</span></div>
+            <div class="w5-pr-balance">所持金: <span class="text-gold">¥{{ store.balance.toLocaleString() }}</span></div>
+          </div>
+        </div>
+        <button class="w5-bet-btn" :class="{active: canWin5Bet}" :disabled="!canWin5Bet" @click="placeWin5Bet">
+          {{ canWin5Bet
+            ? `WIN5 ${win5TotalCombos}通り ¥${win5TotalBet.toLocaleString()} 購入する`
+            : win5TotalCombos === 0 ? '各レースから馬を選択してください'
+            : win5TotalBet > store.balance ? '残高不足' : '選択してください' }}
+        </button>
+        <div v-if="win5BetMsg" class="w5-bet-msg" :class="{success: win5BetOk}">{{ win5BetMsg }}</div>
+      </div>
+
+      <div class="w5-note mt-8">
+        払戻 = 5勝馬のオッズ積 × 30（最低¥100,000/100円）。全レース確定後に自動精算。
+      </div>
+    </div>
   </div>
 </template>
 
@@ -275,4 +445,78 @@ const featuredRaces = computed(() => {
 .fs-open   { background: #dcfce7; color: #166534; }
 .fs-closed { background: #f1f5f9; color: #9ca3af; }
 .fs-result { background: #dbeafe; color: #1e40af; }
+
+/* WIN5 */
+.win5-wrap { }
+.win5-hdr { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.win5-label { font-size: 1rem; font-weight: 800; color: #d97706; background: #fefce8; border: 1px solid #d97706; padding: 3px 10px; border-radius: 5px; }
+.win5-desc { font-size: 0.75rem; color: #6b7280; }
+
+.win5-races-scroll { overflow-x: auto; padding-bottom: 6px; }
+.win5-races-grid { display: flex; gap: 6px; min-width: 560px; }
+.win5-race-col { flex: 1; min-width: 105px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 6px; background: #f8fafc; }
+
+.w5-head { margin-bottom: 6px; }
+.w5-no { display: inline-block; background: #d97706; color: #fff; font-weight: 800; font-size: 0.68rem; padding: 1px 5px; border-radius: 3px; }
+.w5-status { float: right; font-size: 0.6rem; font-weight: 700; padding: 1px 4px; border-radius: 2px; }
+.w5s-open   { background: #dcfce7; color: #166534; }
+.w5s-closed { background: #f1f5f9; color: #9ca3af; }
+.w5s-result { background: #dbeafe; color: #1e40af; }
+.w5-venue { font-size: 0.78rem; font-weight: 700; color: #1a1a1a; margin-top: 3px; }
+.w5-grade-name { font-size: 0.63rem; color: #374151; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w5-time { font-size: 0.6rem; color: #9ca3af; }
+
+.w5-result { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 3px 5px; font-size: 0.65rem; font-weight: 700; color: #166534; margin-bottom: 5px; display: flex; gap: 3px; align-items: center; }
+.w5-result-num { font-weight: 800; }
+.w5-result-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w5-hit { color: #16a34a; }
+.w5-miss { color: #dc2626; }
+
+.w5-horses { display: flex; flex-direction: column; gap: 2px; }
+.w5-btn {
+  display: flex; align-items: center; gap: 3px;
+  padding: 3px 4px; border-radius: 4px; border: 1px solid #e2e8f0;
+  background: #fff; font-size: 0.68rem; cursor: pointer; width: 100%;
+  text-align: left; transition: all 0.1s;
+}
+.w5-btn:hover:not(.w5-disabled) { border-color: #16a34a; background: #f0fdf4; }
+.w5-btn.w5-picked { background: #16a34a; border-color: #16a34a; color: #fff; }
+.w5-btn.w5-picked .w5-odds { color: #fff !important; }
+.w5-btn.w5-winner { border-color: #d97706; outline: 1px solid #d97706; }
+.w5-btn.w5-disabled { opacity: 0.6; cursor: default; }
+.w5-num { font-weight: 800; font-size: 0.72rem; min-width: 14px; text-align: center; }
+.w5-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w5-odds { font-size: 0.6rem; font-weight: 700; white-space: nowrap; }
+
+.w5-combo-row { display: flex; align-items: center; gap: 8px; }
+.w5-combo-label { font-size: 0.82rem; color: #6b7280; }
+.w5-combo-val { font-size: 1.1rem; font-weight: 800; color: #16a34a; }
+
+.w5-purchase-top { display: flex; gap: 16px; flex-wrap: wrap; }
+.numpad-area { flex-shrink: 0; }
+.numpad-label { font-size: 0.72rem; color: #6b7280; margin-bottom: 4px; }
+.numpad-display { background: #fefce8; border: 1px solid #d97706; border-radius: 6px; padding: 6px 10px; font-size: 1.1rem; font-weight: 800; text-align: right; color: #92400e; margin-bottom: 6px; min-width: 120px; }
+.numpad-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; }
+.numpad-btn { padding: 8px 4px; border-radius: 5px; border: 1px solid #e2e8f0; background: #f8fafc; color: #374151; font-size: 0.85rem; font-weight: 700; }
+.numpad-btn:last-child { color: #dc2626; }
+.numpad-btn:hover { background: #e2e8f0; }
+.quick-amounts { display: flex; gap: 4px; flex-wrap: wrap; }
+.quick-btn { padding: 3px 7px; border-radius: 4px; border: 1px solid #e2e8f0; background: #f8fafc; color: #374151; font-size: 0.76rem; }
+.quick-btn:hover { background: #e2e8f0; }
+
+.w5-purchase-right { flex: 1; min-width: 130px; }
+.w5-pr-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: #6b7280; padding: 3px 0; }
+.w5-pr-total-row { display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding: 6px 0; margin: 4px 0; }
+.w5-pr-total { font-size: 1.05rem; font-weight: 800; color: #16a34a; }
+.w5-pr-balance { font-size: 0.75rem; color: #6b7280; }
+
+.w5-bet-btn { width: 100%; padding: 13px; border-radius: 8px; border: none; font-size: 0.95rem; font-weight: 800; background: #e2e8f0; color: #9ca3af; cursor: not-allowed; }
+.w5-bet-btn.active { background: #d97706; color: #fff; cursor: pointer; }
+.w5-bet-btn.active:hover { background: #b45309; }
+.w5-bet-msg { margin-top: 8px; padding: 9px; border-radius: 5px; background: #f1f5f9; font-size: 0.82rem; }
+.w5-bet-msg.success { background: #dcfce7; color: #166534; }
+
+.w5-note { font-size: 0.72rem; color: #6b7280; padding: 4px 0; }
+
+.mt-6 { margin-top: 6px; }
 </style>

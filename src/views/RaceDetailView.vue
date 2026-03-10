@@ -325,6 +325,17 @@ function gradeOf(grade) {
   if (grade.includes('GI'))   return 'GI'
   return null
 }
+
+// ---- チャージモーダル ----
+const showChargeModal = ref(false)
+const chargeMsg = ref('')
+const CHARGE_PRESETS = [1000, 3000, 5000, 10000, 30000]
+function doCharge(amt) {
+  store.charge(amt)
+  chargeMsg.value = `¥${amt.toLocaleString()} チャージしました`
+  showChargeModal.value = false
+  setTimeout(() => { chargeMsg.value = '' }, 3000)
+}
 </script>
 
 <template>
@@ -566,7 +577,11 @@ function gradeOf(grade) {
               <div class="purchase-row"><span>1点</span><span>¥{{ betAmount.toLocaleString() }}</span></div>
               <div class="purchase-row"><span>点数</span><span>{{ combinations.length }}通り</span></div>
               <div class="purchase-total-row"><span>合計</span><span class="purchase-total">¥{{ totalAmount.toLocaleString() }}</span></div>
-              <div class="purchase-balance">所持金: <span class="text-gold">¥{{ store.balance.toLocaleString() }}</span></div>
+              <div class="purchase-balance">
+                所持金: <span class="text-gold">¥{{ store.balance.toLocaleString() }}</span>
+                <button class="charge-link-btn" @click="showChargeModal = true">チャージ</button>
+              </div>
+              <div v-if="chargeMsg" class="charge-inline-msg">{{ chargeMsg }}</div>
             </div>
           </div>
           <button class="bet-submit-btn" :class="{active:canBet}" :disabled="!canBet" @click="placeBet">
@@ -657,6 +672,20 @@ function gradeOf(grade) {
   <div v-else class="card">
     レース情報が見つかりません。
     <button class="btn btn-secondary mt-12" @click="router.push('/')">← 戻る</button>
+  </div>
+
+  <!-- チャージモーダル -->
+  <div v-if="showChargeModal" class="modal-overlay" @click.self="showChargeModal = false">
+    <div class="modal-box card">
+      <div class="modal-title">残高チャージ（仮想銀行振込）</div>
+      <p class="text-muted" style="font-size:0.75rem;margin-bottom:12px;">※ デモサービスのため実際の入金は発生しません。</p>
+      <div class="charge-preset-grid">
+        <button v-for="amt in CHARGE_PRESETS" :key="amt" class="charge-preset-btn" @click="doCharge(amt)">
+          ¥{{ amt.toLocaleString() }}
+        </button>
+      </div>
+      <button class="btn btn-secondary mt-12" style="width:100%;font-size:0.85rem;" @click="showChargeModal = false">閉じる</button>
+    </div>
   </div>
 </template>
 
@@ -826,4 +855,20 @@ function gradeOf(grade) {
 .pt-payout { text-align: right; font-weight: 800; color: #dc2626; font-size: 1rem; }
 
 .mt-6 { margin-top: 6px; }
+
+/* チャージ */
+.charge-link-btn { border: none; background: none; color: #2563eb; font-size: 0.72rem; text-decoration: underline; cursor: pointer; padding: 0 4px; }
+.charge-inline-msg { font-size: 0.75rem; color: #16a34a; margin-top: 4px; }
+
+/* チャージモーダル */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300; display: flex; align-items: center; justify-content: center; }
+.modal-box { max-width: 300px; width: 90%; padding: 20px !important; }
+.modal-title { font-size: 0.95rem; font-weight: 800; color: #1a1a1a; margin-bottom: 10px; }
+.charge-preset-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.charge-preset-btn {
+  padding: 10px 4px; border-radius: 7px; border: 1px solid #e2e8f0;
+  background: #f8fafc; color: #374151; font-size: 0.82rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+}
+.charge-preset-btn:hover { background: #16a34a; border-color: #16a34a; color: #fff; }
 </style>
