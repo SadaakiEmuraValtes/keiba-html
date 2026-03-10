@@ -100,10 +100,14 @@ const RESULT_PATTERNS = [
   [2,6,3],[4,3,1],[6,1,2],[1,2,5],[3,2,6],
   [8,3,1],[2,7,4],[5,1,3],[9,2,1],[1,5,8],
   [4,2,7],[6,3,2],[11,4,1],[2,8,3],[3,9,2],
+  [10,3,2],[1,6,4],[7,4,2],[12,2,1],[5,3,8],
+  [3,10,1],[9,1,4],[13,5,2],[1,7,11],[6,2,9],
 ]
 
 export function generateResult(raceKey, horseCount, horses) {
-  const pattern = RESULT_PATTERNS[raceKey % RESULT_PATTERNS.length]
+  // LCG で偏りのないパターン選択
+  const h = (raceKey * 1000003 + 999983) >>> 0
+  const pattern = RESULT_PATTERNS[h % RESULT_PATTERNS.length]
   function byPop(pop) {
     const p = Math.min(pop, horseCount)
     return (horses ?? []).find(h => h.popularity === p)?.number

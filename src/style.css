@@ -2,8 +2,8 @@
 
 body {
   font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
-  background: #0d1b2a;
-  color: #daeee4;
+  background: #f5f7fa;
+  color: #1a1a1a;
   min-height: 100vh;
 }
 
@@ -16,12 +16,13 @@ button { cursor: pointer; font-family: inherit; }
 
 /* Header */
 .app-header {
-  background: linear-gradient(135deg, #091420 0%, #0d2018 100%);
-  border-bottom: 2px solid #22c55e;
+  background: #ffffff;
+  border-bottom: 2px solid #16a34a;
   padding: 0 16px;
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 .header-inner {
   max-width: 960px;
@@ -34,51 +35,51 @@ button { cursor: pointer; font-family: inherit; }
 .header-logo {
   font-size: 1.4rem;
   font-weight: 800;
-  color: #4ade80;
+  color: #16a34a;
   letter-spacing: 0.05em;
   white-space: nowrap;
 }
-.header-logo span { color: #fbbf24; }
+.header-logo span { color: #d97706; }
 .header-nav { display: flex; gap: 4px; flex: 1; justify-content: center; }
 .nav-link {
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #7ab898;
+  color: #374151;
   transition: all 0.2s;
   white-space: nowrap;
 }
-.nav-link:hover, .nav-link.active { background: #22c55e22; color: #4ade80; }
+.nav-link:hover, .nav-link.active { background: #dcfce7; color: #16a34a; }
 .header-balance {
-  background: #0f2a1c;
-  border: 1px solid #fbbf24;
+  background: #fefce8;
+  border: 1px solid #d97706;
   border-radius: 8px;
   padding: 4px 12px;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #fbbf24;
+  color: #92400e;
   white-space: nowrap;
 }
 
 /* Footer */
 .app-footer {
-  background: #091420;
-  border-top: 1px solid #1e3a30;
+  background: #f1f5f9;
+  border-top: 1px solid #e2e8f0;
   text-align: center;
   padding: 12px;
   font-size: 0.75rem;
-  color: #4a7060;
+  color: #64748b;
 }
 
 /* Cards */
 .card {
-  background: #112240;
-  border: 1px solid #1e3a5c;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 16px;
 }
-.card:hover { border-color: #2a5070; }
+.card:hover { border-color: #cbd5e1; }
 
 /* Buttons */
 .btn {
@@ -92,13 +93,13 @@ button { cursor: pointer; font-family: inherit; }
   font-weight: 700;
   transition: all 0.2s;
 }
-.btn-primary { background: #22c55e; color: #fff; }
-.btn-primary:hover { background: #16a34a; }
-.btn-primary:disabled { background: #2a4a38; color: #4a6a58; cursor: not-allowed; }
-.btn-secondary { background: #163048; color: #8ab8cc; border: 1px solid #2a4d72; }
-.btn-secondary:hover { background: #1e3d60; }
-.btn-gold { background: #fbbf24; color: #111; }
-.btn-gold:hover { background: #f59e0b; }
+.btn-primary { background: #16a34a; color: #fff; }
+.btn-primary:hover { background: #15803d; }
+.btn-primary:disabled { background: #d1fae5; color: #6ee7b7; cursor: not-allowed; }
+.btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+.btn-secondary:hover { background: #e2e8f0; }
+.btn-gold { background: #d97706; color: #fff; }
+.btn-gold:hover { background: #b45309; }
 .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
 
 /* Status badges */
@@ -109,15 +110,15 @@ button { cursor: pointer; font-family: inherit; }
   font-size: 0.75rem;
   font-weight: 700;
 }
-.badge-open    { background: #0d3320; color: #4ade80; border: 1px solid #166534; animation: pulse-green 1.5s infinite; }
-.badge-closed  { background: #1a2535; color: #64748b; }
-.badge-result  { background: #0a2438; color: #38bdf8; }
-.badge-giii    { background: #1f1208; color: #fb923c; }
-.badge-gii     { background: #181e2e; color: #94a3b8; }
-.badge-gi      { background: #291a00; color: #fbbf24; }
-.badge-win     { background: #0d3320; color: #4ade80; }
-.badge-lose    { background: #1e2535; color: #64748b; }
-.badge-pending { background: #0e2040; color: #60a5fa; }
+.badge-open    { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; animation: pulse-green 1.5s infinite; }
+.badge-closed  { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+.badge-result  { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+.badge-giii    { background: #ffedd5; color: #9a3412; }
+.badge-gii     { background: #dbeafe; color: #1e40af; }
+.badge-gi      { background: #fef3c7; color: #92400e; }
+.badge-win     { background: #dcfce7; color: #166534; }
+.badge-lose    { background: #f1f5f9; color: #64748b; }
+.badge-pending { background: #ede9fe; color: #5b21b6; }
 
 @keyframes pulse-green {
   0%, 100% { opacity: 1; }
@@ -127,19 +128,19 @@ button { cursor: pointer; font-family: inherit; }
 /* Tables */
 .horse-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .horse-table th {
-  background: #163048;
+  background: #f0fdf4;
   padding: 8px 6px;
   text-align: center;
   font-size: 0.78rem;
-  color: #7ab898;
-  border-bottom: 1px solid #1e3a5c;
+  color: #166534;
+  border-bottom: 1px solid #bbf7d0;
 }
 .horse-table td {
   padding: 8px 6px;
-  border-bottom: 1px solid #162840;
+  border-bottom: 1px solid #f1f5f9;
   text-align: center;
 }
-.horse-table tr:hover td { background: #163048; }
+.horse-table tr:hover td { background: #f8fafc; }
 .horse-num {
   display: inline-flex;
   align-items: center;
@@ -149,40 +150,43 @@ button { cursor: pointer; font-family: inherit; }
   border-radius: 50%;
   font-weight: 800;
   font-size: 0.85rem;
-  background: #1e3a5c;
-  color: #daeee4;
+  background: #e2e8f0;
+  color: #374151;
 }
 
 /* Popularity circle colors */
 .pop-1 { background: #d97706; color: #fff; }
-.pop-2 { background: #475569; color: #fff; }
-.pop-3 { background: #78350f; color: #fff; }
-.pop-other { background: #1e3a5c; color: #7ab898; }
+.pop-2 { background: #64748b; color: #fff; }
+.pop-3 { background: #92400e; color: #fff; }
+.pop-other { background: #e2e8f0; color: #374151; }
 
-/* Odds */
+/* Odds - 単勝/複勝: <10=赤, ≥10=黒 / 馬複以上: <100=赤, ≥100=黒 */
 .odds-val { font-weight: 700; }
-.odds-low  { color: #4ade80; }
-.odds-mid  { color: #fbbf24; }
+.odds-red   { color: #dc2626; }
+.odds-black { color: #1a1a1a; }
+/* 旧スタイル (後方互換) */
+.odds-low  { color: #dc2626; }
+.odds-mid  { color: #d97706; }
 .odds-high { color: #64748b; }
 
 /* Select button */
 .select-btn {
   padding: 4px 10px;
   border-radius: 6px;
-  border: 1px solid #2a4d72;
-  background: #163048;
-  color: #8ab8cc;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #374151;
   font-size: 0.8rem;
   font-weight: 600;
   transition: all 0.15s;
 }
-.select-btn.selected { background: #22c55e; border-color: #22c55e; color: #fff; }
-.select-btn:hover:not(.selected) { background: #1e3d60; }
+.select-btn.selected { background: #16a34a; border-color: #16a34a; color: #fff; }
+.select-btn:hover:not(.selected) { background: #e2e8f0; }
 
 /* Bet panel */
 .bet-panel {
-  background: #0d1b2a;
-  border: 1px solid #2a4d72;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 16px;
 }
@@ -190,22 +194,22 @@ button { cursor: pointer; font-family: inherit; }
 .bet-type-tab {
   padding: 5px 12px;
   border-radius: 6px;
-  border: 1px solid #2a4d72;
-  background: #163048;
-  color: #8ab8cc;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #374151;
   font-size: 0.82rem;
   font-weight: 600;
   transition: all 0.15s;
 }
-.bet-type-tab.active { background: #22c55e; border-color: #22c55e; color: #fff; }
-.bet-type-tab:hover:not(.active) { background: #1e3d60; }
+.bet-type-tab.active { background: #16a34a; border-color: #16a34a; color: #fff; }
+.bet-type-tab:hover:not(.active) { background: #e2e8f0; }
 
 .amount-input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .amount-input {
-  background: #163048;
-  border: 1px solid #2a4d72;
+  background: #fff;
+  border: 1px solid #cbd5e1;
   border-radius: 6px;
-  color: #daeee4;
+  color: #1a1a1a;
   padding: 8px 12px;
   font-size: 0.9rem;
   width: 120px;
@@ -214,12 +218,12 @@ button { cursor: pointer; font-family: inherit; }
 .amount-quick button {
   padding: 4px 8px;
   border-radius: 5px;
-  border: 1px solid #2a4d72;
-  background: #163048;
-  color: #8ab8cc;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #374151;
   font-size: 0.78rem;
 }
-.amount-quick button:hover { background: #1e3d60; }
+.amount-quick button:hover { background: #e2e8f0; }
 
 /* Race result display */
 .result-box {
@@ -227,22 +231,22 @@ button { cursor: pointer; font-family: inherit; }
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
-  background: #163048;
+  background: #f0fdf4;
   border-radius: 8px;
   padding: 10px 14px;
 }
 .result-place { text-align: center; }
-.result-place .place-label { font-size: 0.7rem; color: #5a8070; }
+.result-place .place-label { font-size: 0.7rem; color: #64748b; }
 .result-place .place-num { font-size: 1.2rem; font-weight: 800; }
-.first-place  { color: #fbbf24; }
-.second-place { color: #94a3b8; }
-.third-place  { color: #fb923c; }
+.first-place  { color: #d97706; }
+.second-place { color: #64748b; }
+.third-place  { color: #92400e; }
 
 /* Utilities */
-.text-gold  { color: #fbbf24; }
-.text-green { color: #4ade80; }
-.text-red   { color: #f87171; }
-.text-muted { color: #5a8070; }
+.text-gold  { color: #d97706; }
+.text-green { color: #16a34a; }
+.text-red   { color: #dc2626; }
+.text-muted { color: #6b7280; }
 .mt-8  { margin-top: 8px; }
 .mt-12 { margin-top: 12px; }
 .mt-16 { margin-top: 16px; }
@@ -258,5 +262,5 @@ button { cursor: pointer; font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #4ade80;
+  color: #16a34a;
 }

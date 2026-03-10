@@ -22,6 +22,7 @@ const balanceDisplay = computed(() => store.balance.toLocaleString('ja-JP') + '�
 
       <nav class="header-nav">
         <RouterLink to="/" class="nav-link" :class="{ active: route.path === '/' }">レース一覧</RouterLink>
+        <RouterLink to="/win5" class="nav-link nav-win5" :class="{ active: route.path === '/win5' }">WIN5</RouterLink>
         <RouterLink to="/my-page" class="nav-link" :class="{ active: route.path === '/my-page' }">マイページ</RouterLink>
         <RouterLink to="/help" class="nav-link" :class="{ active: route.path === '/help' }">ヘルプ</RouterLink>
       </nav>
@@ -51,15 +52,17 @@ const balanceDisplay = computed(() => store.balance.toLocaleString('ja-JP') + '�
 
 <style scoped>
 .header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.header-username { font-size: 0.75rem; color: #aab; white-space: nowrap; }
+.header-username { font-size: 0.75rem; color: #374151; white-space: nowrap; }
 .btn-logout {
-  padding: 4px 10px; border-radius: 5px; border: 1px solid #444;
-  background: transparent; color: #aab; font-size: 0.75rem; cursor: pointer;
+  padding: 4px 10px; border-radius: 5px; border: 1px solid #cbd5e1;
+  background: transparent; color: #6b7280; font-size: 0.75rem; cursor: pointer;
 }
-.btn-logout:hover { border-color: #22c55e; color: #4ade80; }
+.btn-logout:hover { border-color: #16a34a; color: #16a34a; }
 .btn-login {
   display: inline-block; padding: 5px 14px; border-radius: 6px;
-  background: #22c55e; color: #fff; font-size: 0.82rem; font-weight: 700;
+  background: #16a34a; color: #fff; font-size: 0.82rem; font-weight: 700;
 }
-.btn-login:hover { background: #16a34a; }
+.btn-login:hover { background: #15803d; }
+.nav-win5 { color: #d97706; font-weight: 800; }
+.nav-win5:hover, .nav-win5.active { background: #fefce8; color: #92400e; }
 </style>

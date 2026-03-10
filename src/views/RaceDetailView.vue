@@ -238,7 +238,15 @@ function isHorseHighlighted(num) {
 const isAllSelected = computed(() => horses.value.every(h=>boxSel.value.includes(h.number)))
 function toggleAllBox() { if(isAllSelected.value)boxSel.value=[]; else boxSel.value=horses.value.map(h=>h.number) }
 
-function oddsClass(odds) { return odds<5?'odds-low':odds<15?'odds-mid':'odds-high' }
+// 単勝/複勝: <10=赤, ≥10=黒 / 馬複以上: <100=赤, ≥100=黒
+function oddsClass(odds) {
+  return odds < 10 ? 'odds-red' : 'odds-black'
+}
+function oddsClassCombo(odds, subTab) {
+  const isBasic = subTab === 'tansho' || subTab === 'fukusho'
+  if (isBasic) return odds < 10 ? 'odds-red' : 'odds-black'
+  return odds < 100 ? 'odds-red' : 'odds-black'
+}
 
 function placeOf(num) {
   if (!fullResult.value) return null
@@ -435,7 +443,7 @@ function gradeOf(grade) {
                   </span>
                 </td>
                 <td v-if="oddsSubTab==='tansho'||oddsSubTab==='fukusho'" class="td-name">{{ horseName(row.combo[0]) }}</td>
-                <td><span class="odds-val" :class="oddsClass(row.odds)">{{ row.odds }}</span></td>
+                <td><span class="odds-val" :class="oddsClassCombo(row.odds, oddsSubTab)">{{ row.odds }}</span></td>
                 <td v-if="oddsSubTab==='tansho'||oddsSubTab==='fukusho'">
                   <span class="pop-txt" :class="'pop-txt-'+(horseObj(row.combo[0])?.popularity<=3?horseObj(row.combo[0]).popularity:'o')">
                     {{ horseObj(row.combo[0])?.popularity }}人気
@@ -654,63 +662,63 @@ function gradeOf(grade) {
 
 <style scoped>
 /* スイッチャー */
-.switcher-wrap { background: #091420; border: 1px solid #1e3a5c; border-radius: 8px; padding: 10px 12px; }
+.switcher-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; }
 .venue-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.venue-tab { padding: 5px 12px; border-radius: 6px; border: 1px solid #1e3a5c; background: #112240; color: #7ab898; font-size: 0.82rem; font-weight: 700; }
-.venue-tab.active { background: #22c55e; border-color: #22c55e; color: #fff; }
-.venue-tab:hover:not(.active) { background: #163048; }
+.venue-tab { padding: 5px 12px; border-radius: 6px; border: 1px solid #e2e8f0; background: #f8fafc; color: #374151; font-size: 0.82rem; font-weight: 700; }
+.venue-tab.active { background: #16a34a; border-color: #16a34a; color: #fff; }
+.venue-tab:hover:not(.active) { background: #f1f5f9; }
 .round-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
-.round-tab { padding: 4px 8px; border-radius: 4px; border: 1px solid #1e3a5c; font-size: 0.75rem; font-weight: 600; background: #091420; color: #3a5a50; }
-.round-tab.active { outline: 2px solid #fbbf24; outline-offset: 1px; }
-.rs-open   { background: #0a2018; color: #4ade80; border-color: #166534; }
-.rs-closed { background: #0d1b2a; color: #3a5a50; }
-.rs-result { background: #091a28; color: #38bdf8; border-color: #1e4060; }
-.rs-empty  { background: #091420; color: #1e3a5c; }
-.round-tab:hover:not(.active):not(.rs-empty) { filter: brightness(1.3); }
+.round-tab { padding: 4px 8px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 0.75rem; font-weight: 600; background: #f9fafb; color: #9ca3af; }
+.round-tab.active { outline: 2px solid #d97706; outline-offset: 1px; }
+.rs-open   { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+.rs-closed { background: #f9fafb; color: #9ca3af; }
+.rs-result { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+.rs-empty  { background: #f9fafb; color: #e5e7eb; }
+.round-tab:hover:not(.active):not(.rs-empty) { filter: brightness(0.97); }
 
 /* ヘッダー */
 .race-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.race-venue-label { font-size: 0.82rem; color: #5a8070; }
-.race-name-big { font-size: 1.05rem; font-weight: 800; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
-.race-meta-row { display: flex; gap: 12px; font-size: 0.8rem; color: #5a8070; flex-wrap: wrap; }
-.section-label { font-size: 0.88rem; font-weight: 700; }
-.bet-section-label { font-size: 0.75rem; color: #5a8070; margin-bottom: 4px; }
+.race-venue-label { font-size: 0.82rem; color: #6b7280; }
+.race-name-big { font-size: 1.05rem; font-weight: 800; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; color: #1a1a1a; }
+.race-meta-row { display: flex; gap: 12px; font-size: 0.8rem; color: #6b7280; flex-wrap: wrap; }
+.section-label { font-size: 0.88rem; font-weight: 700; color: #1a1a1a; }
+.bet-section-label { font-size: 0.75rem; color: #6b7280; margin-bottom: 4px; }
 
 /* ステータス */
 .status-badge { font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
-.sb-open   { background: #0d3320; color: #4ade80; border: 1px solid #166534; }
-.sb-closed { background: #163048; color: #64748b; }
-.sb-result { background: #0a2438; color: #38bdf8; }
+.sb-open   { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.sb-closed { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+.sb-result { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
 
 /* グレードバッジ */
 .grade-badge { font-size: 0.72rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
-.gb-gi   { background: #92400e; color: #fbbf24; }
-.gb-gii  { background: #334155; color: #94a3b8; }
-.gb-giii { background: #431407; color: #fb923c; }
+.gb-gi   { background: #fef3c7; color: #92400e; }
+.gb-gii  { background: #dbeafe; color: #1e40af; }
+.gb-giii { background: #ffedd5; color: #9a3412; }
 
 /* タブナビ */
-.tab-nav { display: flex; gap: 4px; border-bottom: 2px solid #1e3a5c; padding-bottom: 0; }
+.tab-nav { display: flex; gap: 4px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0; }
 .page-tab {
   padding: 8px 16px; border-radius: 6px 6px 0 0; border: 1px solid transparent;
-  background: transparent; color: #5a8070; font-size: 0.85rem; font-weight: 700; border-bottom: none;
+  background: transparent; color: #9ca3af; font-size: 0.85rem; font-weight: 700; border-bottom: none;
 }
-.page-tab.active { background: #112240; border-color: #1e3a5c; color: #4ade80; border-bottom-color: #112240; margin-bottom: -2px; }
-.page-tab:hover:not(.active) { color: #7ab898; }
-.vote-tab.active   { color: #22c55e; }
-.result-tab.active { color: #38bdf8; }
+.page-tab.active { background: #fff; border-color: #e2e8f0; color: #16a34a; border-bottom-color: #fff; margin-bottom: -2px; }
+.page-tab:hover:not(.active) { color: #374151; }
+.vote-tab.active   { color: #16a34a; }
+.result-tab.active { color: #1e40af; }
 
 /* テーブル */
 .table-scroll { overflow-x: auto; }
 .horse-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-.horse-table th { background: #163048; padding: 6px 4px; text-align: center; border-bottom: 1px solid #1e3a5c; white-space: nowrap; font-size: 0.76rem; color: #7ab898; }
+.horse-table th { background: #f0fdf4; padding: 6px 4px; text-align: center; border-bottom: 1px solid #bbf7d0; white-space: nowrap; font-size: 0.76rem; color: #166534; }
 .th-name { text-align: left; min-width: 90px; }
-.horse-table td { padding: 5px 4px; border-bottom: 1px solid #112240; text-align: center; }
+.horse-table td { padding: 5px 4px; border-bottom: 1px solid #f1f5f9; text-align: center; color: #1a1a1a; }
 .td-name { text-align: left; font-weight: 600; white-space: nowrap; }
-.td-jockey { white-space: nowrap; font-size: 0.78rem; color: #7ab898; }
-.row-highlighted td { background: #0f2a3a !important; }
-.row-1st td { background: #1e1600 !important; }
-.row-2nd td { background: #131820 !important; }
-.row-3rd td { background: #120e08 !important; }
+.td-jockey { white-space: nowrap; font-size: 0.78rem; color: #6b7280; }
+.row-highlighted td { background: #f0fdf4 !important; }
+.row-1st td { background: #fefce8 !important; }
+.row-2nd td { background: #f8fafc !important; }
+.row-3rd td { background: #fff7ed !important; }
 
 /* 枠バッジ (JRA標準色) */
 .frame-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 3px; font-size: 0.72rem; font-weight: 700; }
@@ -726,23 +734,22 @@ function gradeOf(grade) {
 
 /* 人気テキスト */
 .pop-txt { font-size: 0.72rem; padding: 1px 4px; border-radius: 3px; }
-.pop-txt-1 { background: #d9770622; color: #fbbf24; }
-.pop-txt-2 { background: #47556922; color: #94a3b8; }
-.pop-txt-3 { background: #78350f22; color: #fb923c; }
-.pop-txt-o { background: #1e3a5c44; color: #5a8070; }
+.pop-txt-1 { background: #fef3c7; color: #92400e; }
+.pop-txt-2 { background: #f1f5f9; color: #475569; }
+.pop-txt-3 { background: #ffedd5; color: #9a3412; }
+.pop-txt-o { background: #f1f5f9; color: #6b7280; }
 
 /* オッズ */
 .odds-val { font-weight: 700; }
-.odds-low  { color: #4ade80; }
-.odds-mid  { color: #fbbf24; }
-.odds-high { color: #5a8070; }
+.odds-red   { color: #dc2626; }
+.odds-black { color: #1a1a1a; }
 
 /* 着順チップ */
 .place-chip { font-size: 0.72rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
-.pc-1 { background: #92400e; color: #fbbf24; }
-.pc-2 { background: #334155; color: #94a3b8; }
-.pc-3 { background: #431407; color: #fb923c; }
-.pc-4 { background: #1e3a5c; color: #5a8070; }
+.pc-1 { background: #fef3c7; color: #92400e; }
+.pc-2 { background: #f1f5f9; color: #475569; }
+.pc-3 { background: #ffedd5; color: #9a3412; }
+.pc-4 { background: #f1f5f9; color: #9ca3af; }
 
 /* ログインガード */
 .login-guard { text-align: center; padding: 24px; }
@@ -750,73 +757,73 @@ function gradeOf(grade) {
 /* 式別タブ */
 .tab-row { display: flex; flex-wrap: wrap; gap: 4px; }
 .tab-btn {
-  padding: 5px 11px; border-radius: 5px; border: 1px solid #1e3a5c;
-  background: #112240; color: #7ab898; font-size: 0.82rem; font-weight: 600;
+  padding: 5px 11px; border-radius: 5px; border: 1px solid #e2e8f0;
+  background: #f8fafc; color: #374151; font-size: 0.82rem; font-weight: 600;
 }
-.tab-btn.active { background: #22c55e; border-color: #22c55e; color: #fff; }
-.method-tab.active { background: #22c55e; }
-.nagashi-tab.active { background: #2563eb; border-color: #2563eb; }
-.tab-btn:hover:not(.active) { background: #163048; }
+.tab-btn.active { background: #16a34a; border-color: #16a34a; color: #fff; }
+.method-tab.active { background: #16a34a; }
+.nagashi-tab.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+.tab-btn:hover:not(.active) { background: #e2e8f0; }
 
 /* 選択ボタン */
-.sel-btn { width: 28px; height: 28px; border-radius: 4px; border: 1px solid #1e3a5c; background: #112240; color: #7ab898; font-size: 0.78rem; font-weight: 700; padding: 0; }
-.sel-btn.active    { background: #22c55e; border-color: #22c55e; color: #fff; }
-.sel-axis.active   { background: #22c55e; }
-.sel-axis2.active  { background: #2563eb; border-color: #2563eb; }
-.sel-leg.active    { background: #0e7490; border-color: #0e7490; }
-.sel-btn:hover:not(.active) { background: #163048; }
+.sel-btn { width: 28px; height: 28px; border-radius: 4px; border: 1px solid #e2e8f0; background: #f8fafc; color: #374151; font-size: 0.78rem; font-weight: 700; padding: 0; }
+.sel-btn.active    { background: #16a34a; border-color: #16a34a; color: #fff; }
+.sel-axis.active   { background: #16a34a; }
+.sel-axis2.active  { background: #2563eb; border-color: #2563eb; color: #fff; }
+.sel-leg.active    { background: #0891b2; border-color: #0891b2; color: #fff; }
+.sel-btn:hover:not(.active) { background: #e2e8f0; }
 
 /* 全選択 */
 .allcheck-row { display: flex; align-items: center; }
-.allcheck-label { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #7ab898; cursor: pointer; }
+.allcheck-label { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #374151; cursor: pointer; }
 
 /* 組み合わせ */
 .combo-section { }
 .combo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.combo-count { font-size: 0.9rem; font-weight: 800; color: #22c55e; }
-.combo-empty { color: #3a5a50; font-size: 0.82rem; }
+.combo-count { font-size: 0.9rem; font-weight: 800; color: #16a34a; }
+.combo-empty { color: #9ca3af; font-size: 0.82rem; }
 .combo-list { display: flex; flex-wrap: wrap; gap: 4px; }
-.combo-item { background: #163048; border-radius: 4px; padding: 3px 8px; font-size: 0.78rem; color: #7ab898; }
+.combo-item { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 3px 8px; font-size: 0.78rem; color: #166534; }
 
 /* 購入パネル */
 .purchase-top { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
 .numpad-area { flex-shrink: 0; }
-.numpad-label { font-size: 0.72rem; color: #5a8070; margin-bottom: 4px; }
-.numpad-display { background: #163048; border: 1px solid #2a4d72; border-radius: 6px; padding: 6px 10px; font-size: 1.1rem; font-weight: 800; text-align: right; color: #fbbf24; margin-bottom: 6px; min-width: 120px; }
+.numpad-label { font-size: 0.72rem; color: #6b7280; margin-bottom: 4px; }
+.numpad-display { background: #fefce8; border: 1px solid #d97706; border-radius: 6px; padding: 6px 10px; font-size: 1.1rem; font-weight: 800; text-align: right; color: #92400e; margin-bottom: 6px; min-width: 120px; }
 .numpad-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; }
-.numpad-btn { padding: 8px 4px; border-radius: 5px; border: 1px solid #1e3a5c; background: #112240; color: #daeee4; font-size: 0.85rem; font-weight: 700; }
-.numpad-btn:last-child { color: #fb923c; }
-.numpad-btn:hover { background: #163048; }
+.numpad-btn { padding: 8px 4px; border-radius: 5px; border: 1px solid #e2e8f0; background: #f8fafc; color: #374151; font-size: 0.85rem; font-weight: 700; }
+.numpad-btn:last-child { color: #dc2626; font-weight: 800; }
+.numpad-btn:hover { background: #e2e8f0; }
 .purchase-right { flex: 1; min-width: 140px; }
-.purchase-row { display: flex; justify-content: space-between; font-size: 0.82rem; color: #7ab898; padding: 3px 0; }
-.purchase-total-row { display: flex; justify-content: space-between; border-top: 1px solid #1e3a5c; padding: 6px 0; margin: 4px 0; }
-.purchase-total { font-size: 1.1rem; font-weight: 800; color: #22c55e; }
-.purchase-balance { font-size: 0.78rem; color: #5a8070; }
+.purchase-row { display: flex; justify-content: space-between; font-size: 0.82rem; color: #6b7280; padding: 3px 0; }
+.purchase-total-row { display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding: 6px 0; margin: 4px 0; }
+.purchase-total { font-size: 1.1rem; font-weight: 800; color: #16a34a; }
+.purchase-balance { font-size: 0.78rem; color: #6b7280; }
 .quick-amounts { display: flex; gap: 4px; flex-wrap: wrap; }
-.quick-btn { padding: 3px 7px; border-radius: 4px; border: 1px solid #1e3a5c; background: #112240; color: #7ab898; font-size: 0.76rem; }
-.quick-btn:hover { background: #163048; }
-.bet-submit-btn { width: 100%; padding: 14px; border-radius: 8px; border: none; font-size: 1rem; font-weight: 800; background: #1e3a5c; color: #3a5a50; cursor: not-allowed; }
-.bet-submit-btn.active { background: #22c55e; color: #fff; cursor: pointer; }
-.bet-submit-btn.active:hover { background: #16a34a; }
-.bet-message { margin-top: 10px; padding: 10px; border-radius: 6px; background: #112240; font-size: 0.85rem; color: #7ab898; }
-.bet-message.success { background: #0d3320; color: #4ade80; }
+.quick-btn { padding: 3px 7px; border-radius: 4px; border: 1px solid #e2e8f0; background: #f8fafc; color: #374151; font-size: 0.76rem; }
+.quick-btn:hover { background: #e2e8f0; }
+.bet-submit-btn { width: 100%; padding: 14px; border-radius: 8px; border: none; font-size: 1rem; font-weight: 800; background: #e2e8f0; color: #9ca3af; cursor: not-allowed; }
+.bet-submit-btn.active { background: #16a34a; color: #fff; cursor: pointer; }
+.bet-submit-btn.active:hover { background: #15803d; }
+.bet-message { margin-top: 10px; padding: 10px; border-radius: 6px; background: #f1f5f9; font-size: 0.85rem; color: #374151; }
+.bet-message.success { background: #dcfce7; color: #166534; }
 
 /* オッズタブ */
 .odds-sub-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
-.odds-sub-tab { padding: 5px 11px; border-radius: 5px; border: 1px solid #1e3a5c; background: #112240; color: #7ab898; font-size: 0.82rem; font-weight: 600; }
-.odds-sub-tab.active { background: #0e7490; border-color: #0e7490; color: #fff; }
-.odds-sub-tab:hover:not(.active) { background: #163048; }
+.odds-sub-tab { padding: 5px 11px; border-radius: 5px; border: 1px solid #e2e8f0; background: #f8fafc; color: #374151; font-size: 0.82rem; font-weight: 600; }
+.odds-sub-tab.active { background: #0891b2; border-color: #0891b2; color: #fff; }
+.odds-sub-tab:hover:not(.active) { background: #e2e8f0; }
 .odds-note { font-size: 0.72rem; }
 .odds-combo { text-align: left; }
-.combo-sep { color: #3a5a50; margin: 0 1px; font-size: 0.72rem; }
+.combo-sep { color: #9ca3af; margin: 0 1px; font-size: 0.72rem; }
 
 /* 払戻テーブル */
 .payout-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-.payout-table tr { border-bottom: 1px solid #1e3a5c; }
-.payout-table td { padding: 8px 6px; }
-.pt-type { color: #7ab898; font-weight: 700; width: 60px; white-space: nowrap; }
-.pt-combo { font-family: monospace; font-size: 0.95rem; }
-.pt-payout { text-align: right; font-weight: 800; color: #4ade80; font-size: 1rem; }
+.payout-table tr { border-bottom: 1px solid #f1f5f9; }
+.payout-table td { padding: 8px 6px; color: #1a1a1a; }
+.pt-type { color: #16a34a; font-weight: 700; width: 60px; white-space: nowrap; }
+.pt-combo { font-family: monospace; font-size: 0.95rem; color: #374151; }
+.pt-payout { text-align: right; font-weight: 800; color: #dc2626; font-size: 1rem; }
 
 .mt-6 { margin-top: 6px; }
 </style>

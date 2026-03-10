@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 import { TEST_USERS } from '../data/users.js'
-import { DATE_SCENARIOS, makeRaceKey, getRaceInfo, getRaceStatus } from '../data/scenarios.js'
+import { DATE_SCENARIOS, makeRaceKey, getRaceInfo, getRaceStatus, getWin5RaceKeys, parseRaceKey } from '../data/scenarios.js'
 import { generateHorses, generateResult, checkComboWin, calcComboPayout } from '../data/masterData.js'
 
 const SESSION_KEY = 'keibanet_session'
@@ -106,6 +106,26 @@ export const store = reactive({
     return true
   },
 
+  // ---- WIN5投票 ----
+  placeWin5Bet(win5RaceKeys, combos, amountPerCombo) {
+    if (!this.currentAccount) return false
+    const total = combos.length * amountPerCombo
+    if (this.balance < total) return false
+    this._accounts[this.currentUserId].bets.push({
+      id: Date.now(),
+      raceKey: -1,
+      win5RaceKeys,
+      raceLabel: 'WIN5',
+      betTypeStr: 'WIN5',
+      combos, amountPerCombo, total,
+      status: 'pending', payout: 0,
+      placedAt: new Date().toISOString(),
+    })
+    this._accounts[this.currentUserId].balance -= total
+    saveAccounts(this._accounts)
+    return true
+  },
+
   // ---- 仮想時刻設定 ----
   setVirtualHour(h) {
     const prev = this.virtualHour
@@ -116,7 +136,7 @@ export const store = reactive({
 
   setDateIdx(idx) {
     this.selectedDateIdx = idx
-    this.virtualHour = 10
+    this.virtualHour = 9
     this._saveSession()
   },
 
@@ -126,6 +146,8 @@ export const store = reactive({
     if (!acc) return
     const scenario = DATE_SCENARIOS[this.selectedDateIdx]
     if (!scenario) return
+
+    // 通常馬券の精算
     scenario.venues.forEach((_, vSeqIdx) => {
       for (let round = 1; round <= 12; round++) {
         const info = getRaceInfo(this.selectedDateIdx, vSeqIdx, round)
@@ -140,6 +162,49 @@ export const store = reactive({
         acc.settledKeys.push(raceKey)
       }
     })
+
+    // WIN5精算: 全5レースが確定したら
+    const win5Keys = getWin5RaceKeys(this.selectedDateIdx)
+    if (win5Keys.length === 5) {
+      const win5SettledKey = 'win5_' + this.selectedDateIdx
+      const allDone = win5Keys.every(k => {
+        const { dateIdx, venueSeqIdx, round } = parseRaceKey(k)
+        const info = getRaceInfo(dateIdx, venueSeqIdx, round)
+        return info && getRaceStatus(info.startHour, this.virtualHour) === 'result'
+      })
+      if (allDone && !acc.settledKeys.includes(win5SettledKey)) {
+        const results = win5Keys.map(k => {
+          const { dateIdx, venueSeqIdx, round } = parseRaceKey(k)
+          const info = getRaceInfo(dateIdx, venueSeqIdx, round)
+          const horses = generateHorses(k, info.count)
+          return { result: generateResult(k, info.count, horses), horses }
+        })
+        acc.bets
+          .filter(b => b.betTypeStr === 'WIN5' &&
+            b.win5RaceKeys &&
+            JSON.stringify(b.win5RaceKeys) === JSON.stringify(win5Keys) &&
+            b.status === 'pending')
+          .forEach(bet => {
+            let totalPayout = 0
+            bet.combos.forEach(comboStr => {
+              const picks = comboStr.split('-').map(Number)
+              const allCorrect = picks.every((pick, i) => pick === results[i].result.first)
+              if (allCorrect) {
+                const mult = results.reduce((m, { result, horses }) => {
+                  const winner = horses.find(h => h.number === result.first)
+                  return m * (winner?.odds ?? 1)
+                }, 1)
+                totalPayout += Math.max(100000, Math.floor(bet.amountPerCombo * mult * 30 / 100) * 100)
+              }
+            })
+            bet.status = totalPayout > 0 ? 'win' : 'lose'
+            bet.payout = totalPayout
+            if (totalPayout > 0) acc.balance += totalPayout
+          })
+        acc.settledKeys.push(win5SettledKey)
+      }
+    }
+
     saveAccounts(this._accounts)
   },
 
