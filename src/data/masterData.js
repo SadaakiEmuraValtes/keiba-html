@@ -128,6 +128,43 @@ export function checkComboWin(betTypeName, nums, result) {
   }
 }
 
+// ===== 全着順生成 =====
+export function generateFullResult(raceKey, horseCount, horses) {
+  const top3 = generateResult(raceKey, horseCount, horses)
+  const top3Nums = [top3.first, top3.second, top3.third]
+  const remaining = horses.map(h => h.number).filter(n => !top3Nums.includes(n))
+  const rest = shuffled(remaining, raceKey * 13337 + 99991)
+  return [...top3Nums, ...rest]
+}
+
+// ===== レース払戻金計算 (100円あたり) =====
+export function calcRacePayouts(result, horses) {
+  const { first, second, third } = result
+  const o = (num) => horses.find(h => h.number === num)?.odds ?? 1
+  const o1 = o(first), o2 = o(second), o3 = o(third)
+  // 10円単位で切り捨て
+  const p = (mult) => Math.max(100, Math.floor(mult * 10) * 10)
+  const s2 = (a, b) => [a, b].sort((x, y) => x - y).join('-')
+  const s3 = (a, b, c) => [a, b, c].sort((x, y) => x - y).join('-')
+  return {
+    tansho:     { combo: String(first),              payout: p(o1) },
+    fukusho:    [
+      { combo: String(first),  payout: p(Math.max(1.0, o1 * 0.38)) },
+      { combo: String(second), payout: p(Math.max(1.0, o2 * 0.38)) },
+      { combo: String(third),  payout: p(Math.max(1.0, o3 * 0.38)) },
+    ],
+    umaren:     { combo: s2(first, second),           payout: p(Math.max(1.5,  Math.sqrt(o1*o2)*1.8+1)) },
+    umatan:     { combo: `${first}→${second}`,        payout: p(Math.max(2.0,  o1*1.3+1)) },
+    wide:       [
+      { combo: s2(first,second),  payout: p(Math.max(1.0, Math.sqrt(o1*o2)*0.9+0.5)) },
+      { combo: s2(first,third),   payout: p(Math.max(1.0, Math.sqrt(o1*o3)*0.9+0.5)) },
+      { combo: s2(second,third),  payout: p(Math.max(1.0, Math.sqrt(o2*o3)*0.9+0.5)) },
+    ],
+    sanrenpuku: { combo: s3(first, second, third),    payout: p(Math.max(3.0,  Math.cbrt(o1*o2*o3)*3+5)) },
+    sanrentan:  { combo: `${first}→${second}→${third}`, payout: p(Math.max(5.0, Math.cbrt(o1*o2*o3)*6+10)) },
+  }
+}
+
 export function calcComboPayout(betTypeName, result, horses, amountPerCombo) {
   const o = (num) => horses.find(h => h.number === num)?.odds ?? 1
   const o1 = o(result.first), o2 = o(result.second), o3 = o(result.third)

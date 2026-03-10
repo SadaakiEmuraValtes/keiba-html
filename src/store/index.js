@@ -45,7 +45,7 @@ function settleBets(acc, raceKey, result, horses) {
 
 export const store = reactive({
   selectedDateIdx: sess.selectedDateIdx ?? 0,
-  virtualHour:     sess.virtualHour     ?? 10,
+  virtualHour:     sess.virtualHour     ?? 9,
   currentUserId:   sess.currentUserId   ?? null,
   _accounts: accs,
 

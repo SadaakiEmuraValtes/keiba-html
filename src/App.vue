@@ -56,10 +56,10 @@ const balanceDisplay = computed(() => store.balance.toLocaleString('ja-JP') + 'å
   padding: 4px 10px; border-radius: 5px; border: 1px solid #444;
   background: transparent; color: #aab; font-size: 0.75rem; cursor: pointer;
 }
-.btn-logout:hover { border-color: #e63946; color: #e63946; }
+.btn-logout:hover { border-color: #22c55e; color: #4ade80; }
 .btn-login {
   display: inline-block; padding: 5px 14px; border-radius: 6px;
-  background: #e63946; color: #fff; font-size: 0.82rem; font-weight: 700;
+  background: #22c55e; color: #fff; font-size: 0.82rem; font-weight: 700;
 }
-.btn-login:hover { background: #c1121f; }
+.btn-login:hover { background: #16a34a; }
 </style>

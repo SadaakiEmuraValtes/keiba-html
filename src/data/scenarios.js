@@ -72,27 +72,27 @@ export const DATE_SCENARIOS = [
   {
     id: 0,
     dateLabel: '2026/03/07（土）',
-    venues: ['tokyo', 'nakayama', 'hanshin'],
+    venues: ['tokyo', 'hanshin', 'kokura'],
   },
   {
     id: 1,
     dateLabel: '2026/03/08（日）',
-    venues: ['tokyo', 'nakayama', 'hanshin'],
+    venues: ['tokyo', 'hanshin', 'kokura'],
   },
   {
     id: 2,
     dateLabel: '2026/03/14（土）',
-    venues: ['hanshin', 'chukyo', 'niigata'],
+    venues: ['nakayama', 'kyoto', 'chukyo'],
   },
   {
     id: 3,
     dateLabel: '2026/03/15（日）',
-    venues: ['hanshin', 'chukyo', 'fukushima'],
+    venues: ['nakayama', 'kyoto', 'niigata'],
   },
   {
     id: 4,
     dateLabel: '2026/03/21（土）',
-    venues: ['tokyo', 'nakayama', 'chukyo'],
+    venues: ['tokyo', 'hanshin', 'fukushima'],
   },
 ]
 
