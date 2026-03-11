@@ -13,7 +13,6 @@ export const JRA_VENUES = {
 }
 
 // ===== ラウンドごとのレース情報 (共通パターン) =====
-// venue ごとに track を微調整する venueTrack で上書き
 const BASE_ROUNDS = [
   { round:1,  startHour:10, time:'10:05', track:'ダート1200m', grade:'2歳未勝利',      count:9  },
   { round:2,  startHour:10, time:'10:45', track:'芝1400m',     grade:'3歳未勝利',      count:10 },
@@ -35,7 +34,7 @@ const VENUE_TRACK_OVERRIDE = {
   nakayama: { 0:'ダート1200m', 4:'芝2200m', 7:'芝1800m', 9:'芝2000m', 10:'芝1800m' },
   hanshin:  { 1:'芝1600m', 4:'芝2400m', 9:'芝1600m', 10:'芝3000m' },
   kyoto:    { 1:'芝1400m', 4:'芝1600m', 9:'芝1800m', 10:'芝3200m' },
-  chukyo:   { 1:'芝1200m', 6:'ダート1800m', 9:'芝2000m' },
+  chukyo:   { 1:'芝1200m', 6:'ダート1800m', 9:'芝2000m', 10:'芝1200m' },
   kokura:   { 1:'芝1200m', 4:'芝1800m', 9:'芝1800m' },
   fukushima:{ 4:'芝1200m', 9:'芝2000m' },
   niigata:  { 1:'芝1200m', 4:'芝2000m', 9:'芝1600m' },
@@ -43,75 +42,112 @@ const VENUE_TRACK_OVERRIDE = {
   hakodate: { 1:'芝1200m', 4:'芝2000m', 9:'芝1800m' },
 }
 
-// 競馬場ごとのグレード上書き (重賞レース名) ─ 各競馬場 最大2グレードまで
-// インデックスは BASE_ROUNDS の 0-based index (index 9 = round 10, index 10 = round 11)
-const VENUE_GRADE_OVERRIDE = {
-  tokyo:    { 9:'東京新聞杯（GIII）',    10:'フェブラリーS（GI）' },
-  nakayama: { 9:'弥生賞（GII）',         10:'中山記念（GII）' },
-  hanshin:  { 9:'チューリップ賞（GII）', 10:'阪神大賞典（GII）' },
-  kyoto:    { 9:'きさらぎ賞（GIII）',    10:'天皇賞（春）（GI）' },
-  chukyo:   { 10:'金鯱賞（GII）' },
-  kokura:   { 9:'小倉大賞典（GIII）' },
-  fukushima:{ 9:'福島記念（GIII）' },
-  niigata:  { 9:'関屋記念（GIII）' },
-  sapporo:  { 9:'札幌記念（GII）' },
-  hakodate: { 9:'函館記念（GIII）' },
-}
+// ===== 5日程シナリオ（2025年の話題レース日程）=====
+// gradeOverride: { venueId: { roundIndex(0-based): gradeString } }
+//   index 9 = round10, index 10 = round11
+// trackOverride: { venueId: { roundIndex: trackString } } ─ VENUE_TRACK_OVERRIDEに追加上書き
+// win5: [[venueSeqIdx, roundNum], ...] 5要素
 
-// ===== WIN5 対象レース (各日程の重賞5レース、最終レース=最高格GI) =====
-// [venueSeqIdx, round] の5ペア ─ すべて round 10 or 11 の重賞
-const WIN5_RACE_DEFS = [
-  [[0,10],[1,10],[2,10],[1,11],[0,11]],  // date 0: 東京新聞杯/チューリップ賞/小倉大賞典/阪神大賞典/フェブラリーS
-  [[0,10],[1,10],[2,10],[1,11],[0,11]],  // date 1: 同上
-  [[0,10],[1,10],[0,11],[2,11],[1,11]],  // date 2: 弥生賞/きさらぎ賞/中山記念/金鯱賞/天皇賞春
-  [[0,10],[1,10],[2,10],[0,11],[1,11]],  // date 3: 弥生賞/きさらぎ賞/関屋記念/中山記念/天皇賞春
-  [[0,10],[1,10],[2,10],[1,11],[0,11]],  // date 4: 東京新聞杯/チューリップ賞/福島記念/阪神大賞典/フェブラリーS
+export const DATE_SCENARIOS = [
+  {
+    // 2025/02/23 フェブルアリー賞（GI）デー ─ 実際のフェブラリーS開催日をモチーフ
+    id: 0,
+    dateLabel: '2025/02/23（日）',
+    venues: ['tokyo', 'hanshin', 'kokura'],
+    gradeOverride: {
+      tokyo:   { 9: '江東新報杯（GIII）',  10: 'フェブルアリー賞（GI）' },
+      hanshin: { 9: 'クローバー賞（GII）',  10: '難波大走典（GII）' },
+      kokura:  { 9: '城下大賞典（GIII）' },
+    },
+    trackOverride: {
+      tokyo: { 10: 'ダート1600m' }, // フェブルアリー賞はダート
+    },
+    // WIN5: 城下大賞典→クローバー賞→江東新報杯→難波大走典→フェブルアリー賞（GI）
+    win5: [[2,10],[1,10],[0,10],[1,11],[0,11]],
+  },
+  {
+    // 2025/03/23 高松堂記念（GI）デー ─ 実際の高松宮記念開催日をモチーフ
+    id: 1,
+    dateLabel: '2025/03/23（日）',
+    venues: ['chukyo', 'hanshin', 'nakayama'],
+    gradeOverride: {
+      chukyo:   { 9: '金魚賞（GII）',   10: '高松堂記念（GI）' },
+      hanshin:  { 9: 'クローバー賞（GII）', 10: '難波大走典（GII）' },
+      nakayama: { 9: '春告賞（GII）',   10: '春陽S（GII）' },
+    },
+    trackOverride: {
+      chukyo: { 10: '芝1200m' }, // 高松堂記念はスプリント
+    },
+    // WIN5: 金魚賞→クローバー賞→春告賞→春陽S→高松堂記念（GI）
+    win5: [[0,10],[1,10],[2,10],[2,11],[0,11]],
+  },
+  {
+    // 2025/04/27 大帝賞（春）（GI）デー ─ 実際の天皇賞（春）開催日をモチーフ
+    id: 2,
+    dateLabel: '2025/04/27（日）',
+    venues: ['kyoto', 'tokyo', 'fukushima'],
+    gradeOverride: {
+      kyoto:    { 9: '如月賞（GIII）',   10: '大帝賞（春）（GI）' },
+      tokyo:    { 9: '江東新報杯（GIII）', 10: '翠嵐S（GII）' },
+      fukushima:{ 9: '磐梯特別（GIII）' },
+    },
+    trackOverride: {
+      kyoto: { 10: '芝3200m' }, // 大帝賞（春）は長距離
+    },
+    // WIN5: 江東新報杯→磐梯特別→如月賞→翠嵐S→大帝賞（春）（GI）
+    win5: [[1,10],[2,10],[0,10],[1,11],[0,11]],
+  },
+  {
+    // 2025/05/25 東洋ダービー（GI）デー ─ 実際の日本ダービー開催日をモチーフ
+    id: 3,
+    dateLabel: '2025/05/25（日）',
+    venues: ['tokyo', 'kyoto', 'niigata'],
+    gradeOverride: {
+      tokyo:  { 9: '京浜賞（GII）',   10: '東洋ダービー（GI）' },
+      kyoto:  { 9: '如月賞（GIII）',  10: '翠嵐S（GII）' },
+      niigata:{ 9: '越後記念（GIII）' },
+    },
+    trackOverride: {
+      tokyo: { 10: '芝2400m' }, // 東洋ダービーは芝クラシック
+    },
+    // WIN5: 如月賞→越後記念→京浜賞→翠嵐S→東洋ダービー（GI）
+    win5: [[1,10],[2,10],[0,10],[1,11],[0,11]],
+  },
+  {
+    // 2025/06/29 宝鐘記念（GI）デー ─ 実際の宝塚記念開催日をモチーフ
+    id: 4,
+    dateLabel: '2025/06/29（日）',
+    venues: ['hanshin', 'tokyo', 'hakodate'],
+    gradeOverride: {
+      hanshin: { 9: '鳴門賞（GII）',    10: '宝鐘記念（GI）' },
+      tokyo:   { 9: '安田杯（GI）',     10: '翠嵐S（GII）' },
+      hakodate:{ 9: '函館快走S（GIII）' },
+    },
+    trackOverride: {
+      hanshin: { 10: '芝2200m' }, // 宝鐘記念は芝中距離
+      tokyo:   { 9:  '芝1600m' }, // 安田杯はマイル
+    },
+    // WIN5: 函館快走S→鳴門賞→安田杯（GI）→翠嵐S→宝鐘記念（GI）
+    win5: [[2,10],[0,10],[1,10],[1,11],[0,11]],
+  },
 ]
 
 export function getWin5RaceKeys(dateIdx) {
-  const defs = WIN5_RACE_DEFS[dateIdx]
-  if (!defs) return []
-  return defs.map(([vsi, round]) => makeRaceKey(dateIdx, vsi, round))
+  const scenario = DATE_SCENARIOS[dateIdx]
+  if (!scenario?.win5) return []
+  return scenario.win5.map(([vsi, round]) => makeRaceKey(dateIdx, vsi, round))
 }
 
-function buildRounds(venueId) {
-  const tOver = VENUE_TRACK_OVERRIDE[venueId] || {}
-  const gOver = VENUE_GRADE_OVERRIDE[venueId] || {}
+function buildRounds(venueId, gradeOverride = {}, trackOverride = {}) {
+  const tBase = VENUE_TRACK_OVERRIDE[venueId] || {}
+  const tOver = { ...tBase, ...(trackOverride[venueId] || {}) }
+  const gOver = gradeOverride[venueId] || {}
   return BASE_ROUNDS.map((r, i) => ({
     ...r,
     track: tOver[i] ?? r.track,
     grade: gOver[i] ?? r.grade,
   }))
 }
-
-// ===== 5 日程シナリオ =====
-export const DATE_SCENARIOS = [
-  {
-    id: 0,
-    dateLabel: '2026/03/07（土）',
-    venues: ['tokyo', 'hanshin', 'kokura'],
-  },
-  {
-    id: 1,
-    dateLabel: '2026/03/08（日）',
-    venues: ['tokyo', 'hanshin', 'kokura'],
-  },
-  {
-    id: 2,
-    dateLabel: '2026/03/14（土）',
-    venues: ['nakayama', 'kyoto', 'chukyo'],
-  },
-  {
-    id: 3,
-    dateLabel: '2026/03/15（日）',
-    venues: ['nakayama', 'kyoto', 'niigata'],
-  },
-  {
-    id: 4,
-    dateLabel: '2026/03/21（土）',
-    venues: ['tokyo', 'hanshin', 'fukushima'],
-  },
-]
 
 // ===== raceKey エンコード =====
 // raceKey = dateIdx * 100000 + venueSeqIdx * 1000 + round
@@ -133,7 +169,7 @@ export function getRaceInfo(dateIdx, venueSeqIdx, round) {
   const venueId = scenario.venues[venueSeqIdx]
   if (!venueId) return null
   const venue = JRA_VENUES[venueId]
-  const rounds = buildRounds(venueId)
+  const rounds = buildRounds(venueId, scenario.gradeOverride, scenario.trackOverride)
   const roundInfo = rounds.find(r => r.round === round)
   if (!roundInfo) return null
   const raceKey = makeRaceKey(dateIdx, venueSeqIdx, round)
@@ -151,7 +187,7 @@ export function getRaceInfo(dateIdx, venueSeqIdx, round) {
 export function getScenarioRaces(dateIdx) {
   const scenario = DATE_SCENARIOS[dateIdx]
   if (!scenario) return []
-  return scenario.venues.flatMap((venueId, seqIdx) =>
+  return scenario.venues.flatMap((_, seqIdx) =>
     Array.from({ length: 12 }, (_, i) => getRaceInfo(dateIdx, seqIdx, i + 1))
   )
 }

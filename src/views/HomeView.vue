@@ -7,7 +7,7 @@ import { generateHorses, generateResult } from '../data/masterData.js'
 
 const router = useRouter()
 
-const HOURS = Array.from({ length: 13 }, (_, i) => 9 + i) // 9-21
+const HOURS = Array.from({ length: 10 }, (_, i) => 9 + i) // 9-18
 
 const scenarios = DATE_SCENARIOS
 
@@ -25,8 +25,7 @@ function gradeOf(grade) {
 }
 
 function gradeShort(grade) {
-  const m = grade.match(/（(.+?)）$/)
-  return m ? m[1] : grade
+  return grade.replace(/（[^）]+）$/, '').trim() || grade
 }
 
 // スケジュール行データ
@@ -76,7 +75,7 @@ const featuredRaces = computed(() => {
   const s = currentScenario.value
   if (!s) return []
   const list = []
-  s.venues.forEach((venueId, seqIdx) => {
+  s.venues.forEach((_, seqIdx) => {
     for (let round = 1; round <= 12; round++) {
       const info = getRaceInfo(store.selectedDateIdx, seqIdx, round)
       if (!info) continue
@@ -169,6 +168,11 @@ function win5OddsClass(odds) { return odds < 10 ? 'odds-red' : 'odds-black' }
 
 <template>
   <div>
+    <!-- 免責バナー -->
+    <div class="disclaimer-banner">
+      ⚠️ 本サイト「KEIBA NET」は架空の競馬投票デモです。実際の競馬・馬券購入とは一切関係ありません。レース名・馬名・騎手名・結果はすべて架空のデータです。
+    </div>
+
     <!-- 日程選択 -->
     <div class="date-selector-section">
       <div class="date-selector-label">開催日程を選択</div>
@@ -362,6 +366,13 @@ function win5OddsClass(odds) { return odds < 10 ? 'odds-red' : 'odds-black' }
 </template>
 
 <style scoped>
+/* 免責バナー */
+.disclaimer-banner {
+  background: #fff8f0; border: 1px solid #f59e0b; border-radius: 6px;
+  padding: 8px 12px; font-size: 0.76rem; color: #92400e; margin-bottom: 12px;
+  line-height: 1.5;
+}
+
 /* 日程選択 */
 .date-selector-section { margin-bottom: 14px; }
 .date-selector-label { font-size: 0.75rem; color: #6b7280; margin-bottom: 6px; }
