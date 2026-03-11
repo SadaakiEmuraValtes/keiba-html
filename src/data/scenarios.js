@@ -130,6 +130,87 @@ export const DATE_SCENARIOS = [
     // WIN5: 函館快走S→鳴門賞→安田杯（GI）→翠嵐S→宝鐘記念（GI）
     win5: [[2,10],[0,10],[1,10],[1,11],[0,11]],
   },
+  {
+    // 2025/08/24（日）北嶺記念（GII）デー ─ 実際の札幌記念開催日をモチーフ
+    id: 5,
+    dateLabel: '2025/08/24（日）',
+    venues: ['sapporo', 'hakodate', 'niigata'],
+    gradeOverride: {
+      sapporo:  { 9: '石狩賞（GIII）',   10: '北嶺記念（GII）' },
+      hakodate: { 9: '函館快走S（GIII）', 10: '五稜郭S（GIII）' },
+      niigata:  { 9: '越後記念（GIII）',  10: '関越S（GIII）' },
+    },
+    trackOverride: {
+      hakodate: { 9: '芝1200m' }, // 函館快走SはスプリントS
+    },
+    // WIN5: 函館快走S→越後記念→石狩賞→関越S→北嶺記念（GII）
+    win5: [[1,10],[2,10],[0,10],[2,11],[0,11]],
+  },
+  {
+    // 2025/09/28（日）疾風賞（GI）デー ─ 実際のスプリンターズS開催日をモチーフ
+    id: 6,
+    dateLabel: '2025/09/28（日）',
+    venues: ['nakayama', 'hanshin', 'kokura'],
+    gradeOverride: {
+      nakayama: { 9: '秋告賞（GII）',    10: '疾風賞（GI）' },
+      hanshin:  { 9: '浪速賞（GII）',    10: '神戸新報杯（GII）' },
+      kokura:   { 9: '城下大賞典（GIII）' },
+    },
+    trackOverride: {
+      nakayama: { 10: '芝1200m' }, // 疾風賞はスプリント
+    },
+    // WIN5: 城下大賞典→浪速賞→秋告賞→神戸新報杯→疾風賞（GI）
+    win5: [[2,10],[1,10],[0,10],[1,11],[0,11]],
+  },
+  {
+    // 2025/10/26（日）大帝賞（秋）（GI）デー ─ 実際の天皇賞（秋）開催日をモチーフ
+    id: 7,
+    dateLabel: '2025/10/26（日）',
+    venues: ['tokyo', 'kyoto', 'fukushima'],
+    gradeOverride: {
+      tokyo:    { 9: '隅田川賞（GIII）', 10: '大帝賞（秋）（GI）' },
+      kyoto:    { 9: '秋映賞（GIII）',   10: '翠嵐S（GII）' },
+      fukushima:{ 9: '磐梯特別（GIII）' },
+    },
+    trackOverride: {
+      tokyo: { 10: '芝2000m' }, // 天皇賞秋は芝2000m
+    },
+    // WIN5: 秋映賞→磐梯特別→隅田川賞→翠嵐S→大帝賞（秋）（GI）
+    win5: [[1,10],[2,10],[0,10],[1,11],[0,11]],
+  },
+  {
+    // 2025/11/23（日）東洋杯（GI）デー ─ 実際のジャパンカップ開催日をモチーフ
+    id: 8,
+    dateLabel: '2025/11/23（日）',
+    venues: ['tokyo', 'kyoto', 'hanshin'],
+    gradeOverride: {
+      tokyo:   { 9: '隅田川賞（GIII）', 10: '東洋杯（GI）' },
+      kyoto:   { 9: '秋映賞（GIII）',   10: '翠嵐S（GII）' },
+      hanshin: { 9: '鳴門賞（GII）',    10: '難波大走典（GII）' },
+    },
+    trackOverride: {
+      tokyo: { 10: '芝2400m' }, // 東洋杯は国際長距離
+    },
+    // WIN5: 鳴門賞→秋映賞→隅田川賞→難波大走典→東洋杯（GI）
+    win5: [[2,10],[1,10],[0,10],[2,11],[0,11]],
+  },
+  {
+    // 2025/12/28（日）冬至記念（GI）デー ─ 実際の有馬記念開催日をモチーフ
+    id: 9,
+    dateLabel: '2025/12/28（日）',
+    venues: ['nakayama', 'hanshin', 'chukyo'],
+    gradeOverride: {
+      nakayama: { 9: '歳末賞（GII）',    10: '冬至記念（GI）' },
+      hanshin:  { 9: '鳴門賞（GII）',    10: '難波大走典（GII）' },
+      chukyo:   { 9: '金魚賞（GII）',    10: '冬嵐S（GII）' },
+    },
+    trackOverride: {
+      nakayama: { 10: '芝2500m' }, // 冬至記念は有馬記念距離
+      chukyo:   { 10: '芝1600m' }, // 冬嵐Sはマイル
+    },
+    // WIN5: 鳴門賞→金魚賞→歳末賞→冬嵐S→冬至記念（GI）
+    win5: [[1,10],[2,10],[0,10],[2,11],[0,11]],
+  },
 ]
 
 export function getWin5RaceKeys(dateIdx) {
