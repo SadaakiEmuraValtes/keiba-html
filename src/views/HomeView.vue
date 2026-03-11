@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { store } from '../store/index.js'
-import { DATE_SCENARIOS, makeRaceKey, getRaceInfo, getRaceStatus, getWin5RaceKeys, parseRaceKey } from '../data/scenarios.js'
+import { DATE_SCENARIOS, makeRaceKey, getRaceInfo, getRaceStatus, getWin5RaceKeys, parseRaceKey, getActiveEvents } from '../data/scenarios.js'
 import { generateHorses, generateResult } from '../data/masterData.js'
 
 const router = useRouter()
@@ -38,11 +38,13 @@ const scheduleRows = computed(() => {
       const info  = getRaceInfo(store.selectedDateIdx, seqIdx, round)
       if (!info) return { round, status: null }
       const status = getRaceStatus(info.startHour, store.virtualHour)
+      const raceKey = makeRaceKey(store.selectedDateIdx, seqIdx, round)
       return {
         round, status,
         time: info.time,
         grade: info.grade,
-        raceKey: makeRaceKey(store.selectedDateIdx, seqIdx, round),
+        raceKey,
+        isCancelled: cancelledRaceKeys.value.has(raceKey),
       }
     })
     return { venueId, venueName: info_venue(venueId), seqIdx, rounds }
@@ -61,6 +63,7 @@ function goRace(cell) {
 
 function cellClass(cell) {
   if (!cell.status) return 'c-empty'
+  if (cell.isCancelled) return 'c-cancelled clickable'
   if (cell.status === 'result') return 'c-result clickable'
   if (cell.status === 'closed') return 'c-closed clickable'
   return 'c-open clickable'
@@ -69,6 +72,36 @@ function cellClass(cell) {
 const openCount = computed(() =>
   scheduleRows.value.flatMap(r => r.rounds).filter(c => c.status === 'open').length
 )
+
+// アクティブイベント（仮想時刻までに発生したもの）
+const activeEvents = computed(() => getActiveEvents(store.selectedDateIdx, store.virtualHour))
+
+// 競走中止レースのraceKeyセット
+const cancelledRaceKeys = computed(() => {
+  const s = currentScenario.value
+  if (!s?.events) return new Set()
+  return new Set(
+    s.events
+      .filter(e => e.type === 'race_cancel' && e.triggerHour <= store.virtualHour)
+      .map(e => makeRaceKey(store.selectedDateIdx, e.venueSeqIdx, e.round))
+  )
+})
+
+// イベント表示用のラベル変換
+const EVENT_TYPE_LABEL = { scratch:'出走取消', exclusion:'除外', jockey_change:'騎乗変更', race_cancel:'競走中止' }
+function eventContent(evt) {
+  if (evt.type === 'scratch')       return `${evt.horseNo}番 出走取消（${evt.note}）`
+  if (evt.type === 'exclusion')     return `${evt.horseNo}番 除外（${evt.note}）`
+  if (evt.type === 'jockey_change') return `${evt.horseNo}番 騎手変更 → ${evt.newJockey}（${evt.note}）`
+  if (evt.type === 'race_cancel')   return `競走中止（${evt.note}）`
+  return evt.note
+}
+function eventRaceLabel(evt) {
+  const s = currentScenario.value
+  if (!s) return ''
+  const venueName = info_venue(s.venues[evt.venueSeqIdx])
+  return `${venueName}${evt.round}R`
+}
 
 // 重賞レースリスト (スケジュール下部表示用) ─ startHour昇順
 const featuredRaces = computed(() => {
@@ -222,7 +255,10 @@ function win5OddsClass(odds) { return odds < 10 ? 'odds-red' : 'odds-black' }
               @click="goRace(cell)"
             >
               <span v-if="gradeOf(cell.grade)" class="grade-chip" :class="'gc-' + gradeOf(cell.grade).toLowerCase()">{{ gradeOf(cell.grade) }}</span>
-              <template v-if="cell.status === 'result'">
+              <template v-if="cell.isCancelled">
+                <span class="c-cancel-txt">中止<br><small>{{ cell.time }}</small></span>
+              </template>
+              <template v-else-if="cell.status === 'result'">
                 <span class="c-result-txt">確定<br><small>{{ cell.time }}</small></span>
               </template>
               <template v-else-if="cell.status === 'closed'">
@@ -245,6 +281,29 @@ function win5OddsClass(odds) { return odds < 10 ? 'odds-red' : 'odds-black' }
       <span class="legend-item"><span class="ld ld-open"></span>投票受付中（クリックで投票）</span>
       <span class="legend-item"><span class="ld ld-closed"></span>締切（クリックで出馬表）</span>
       <span class="legend-item"><span class="ld ld-result"></span>確定（クリックで結果確認）</span>
+    </div>
+
+    <!-- 出走取消・除外・騎乗変更・競走中止イベント一覧 -->
+    <div v-if="activeEvents.length" class="event-section mt-16">
+      <div class="event-label">お知らせ（出走変更・取消情報）</div>
+      <table class="event-table">
+        <thead>
+          <tr>
+            <th class="et-time">発生時刻</th>
+            <th class="et-type">種別</th>
+            <th class="et-race">対象レース</th>
+            <th class="et-content">内容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="evt in activeEvents" :key="evt.id" :class="'erow-' + evt.type">
+            <td class="et-time">{{ evt.triggerHour }}:00</td>
+            <td class="et-type"><span class="etype-chip" :class="'etc-' + evt.type">{{ EVENT_TYPE_LABEL[evt.type] }}</span></td>
+            <td class="et-race">{{ eventRaceLabel(evt) }}</td>
+            <td class="et-content">{{ eventContent(evt) }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- 重賞レース (スケジュール下部・締め切り時刻順) -->
@@ -420,6 +479,9 @@ function win5OddsClass(odds) { return odds < 10 ? 'odds-red' : 'odds-black' }
 /* セル状態 */
 .c-empty  { background: #f9fafb; }
 .c-dash   { color: #d1d5db; }
+.c-cancelled { background: #fef2f2; }
+.c-cancelled:hover { filter: brightness(0.97); }
+.c-cancel-txt { color: #dc2626; font-size: 0.72rem; line-height: 1.5; font-weight: 700; }
 .c-result { background: #eff6ff; }
 .c-result:hover { filter: brightness(0.96); }
 .c-result-txt { color: #1e40af; font-size: 0.72rem; line-height: 1.5; font-weight: 700; }
@@ -438,6 +500,26 @@ function win5OddsClass(odds) { return odds < 10 ? 'odds-red' : 'odds-black' }
 .ld-open   { background: #16a34a; }
 .ld-closed { background: #d1d5db; }
 .ld-result { background: #2563eb; }
+
+/* イベントテーブル */
+.event-section { }
+.event-label { font-size: 0.75rem; font-weight: 700; color: #6b7280; margin-bottom: 8px; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+.event-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.event-table th { background: #fafafa; color: #6b7280; font-weight: 600; padding: 5px 8px; text-align: left; border: 1px solid #e2e8f0; white-space: nowrap; }
+.event-table td { padding: 5px 8px; border: 1px solid #e2e8f0; vertical-align: middle; }
+.et-time    { width: 60px; text-align: center; color: #6b7280; }
+.et-type    { width: 80px; text-align: center; }
+.et-race    { width: 70px; white-space: nowrap; font-weight: 600; color: #374151; }
+.et-content { color: #374151; }
+.erow-scratch td       { background: #fff8f0; }
+.erow-exclusion td     { background: #fff8f0; }
+.erow-jockey_change td { background: #f0f9ff; }
+.erow-race_cancel td   { background: #fef2f2; }
+.etype-chip { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.7rem; font-weight: 700; white-space: nowrap; }
+.etc-scratch       { background: #fef3c7; color: #92400e; }
+.etc-exclusion     { background: #ffedd5; color: #9a3412; }
+.etc-jockey_change { background: #dbeafe; color: #1e40af; }
+.etc-race_cancel   { background: #fee2e2; color: #dc2626; }
 
 /* 重賞リスト */
 .featured-section { }

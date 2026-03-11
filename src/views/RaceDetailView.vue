@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { store } from '../store/index.js'
-import { DATE_SCENARIOS, parseRaceKey, getRaceInfo, getRaceStatus, makeRaceKey } from '../data/scenarios.js'
+import { DATE_SCENARIOS, parseRaceKey, getRaceInfo, getRaceStatus, makeRaceKey, getActiveEvents } from '../data/scenarios.js'
 import { generateHorses, generateResult, generateFullResult, calcRacePayouts } from '../data/masterData.js'
 
 const route  = useRoute()
@@ -23,6 +23,24 @@ const payouts    = computed(() => raceResult.value ? calcRacePayouts(raceResult.
 
 function horseName(num) { return horses.value.find(h => h.number === num)?.name ?? '' }
 function horseObj(num)  { return horses.value.find(h => h.number === num) }
+
+// このレースに関するアクティブイベント
+const raceEvents = computed(() => {
+  const { dateIdx, venueSeqIdx, round } = parsed.value
+  return getActiveEvents(dateIdx, store.virtualHour)
+    .filter(e => e.venueSeqIdx === venueSeqIdx && e.round === round)
+})
+const scratchedNos = computed(() =>
+  new Set(raceEvents.value.filter(e => e.type === 'scratch' || e.type === 'exclusion').map(e => e.horseNo))
+)
+const jockeyChanges = computed(() => {
+  const map = {}
+  raceEvents.value.filter(e => e.type === 'jockey_change').forEach(e => { map[e.horseNo] = e.newJockey })
+  return map
+})
+const isRaceCancelled = computed(() =>
+  raceEvents.value.some(e => e.type === 'race_cancel')
+)
 
 // ---- タブ管理 ----
 const activeTab = ref('card')
@@ -405,15 +423,25 @@ function doCharge(amt) {
                 'row-1st': placeOf(h.number)===1,
                 'row-2nd': placeOf(h.number)===2,
                 'row-3rd': placeOf(h.number)===3,
+                'row-scratched': scratchedNos.has(h.number),
               }">
               <td><span class="frame-badge" :class="'frame-'+h.frame">{{ h.frame }}</span></td>
-              <td><span class="horse-num" :class="h.popularity<=3?'pop-'+h.popularity:'pop-other'">{{ h.number }}</span></td>
+              <td>
+                <span class="horse-num" :class="h.popularity<=3?'pop-'+h.popularity:'pop-other'">{{ h.number }}</span>
+                <span v-if="scratchedNos.has(h.number)" class="scratch-badge">取消</span>
+              </td>
               <td class="td-name">{{ h.name }}</td>
-              <td class="td-jockey">{{ h.jockey }}</td>
+              <td class="td-jockey">
+                <template v-if="jockeyChanges[h.number]">
+                  <span class="jockey-changed">{{ jockeyChanges[h.number] }}</span>
+                  <small class="jockey-orig">（元: {{ h.jockey }}）</small>
+                </template>
+                <template v-else>{{ h.jockey }}</template>
+              </td>
               <td>{{ h.sex }}{{ h.age }}</td>
               <td>{{ h.weight }}</td>
               <td><span class="pop-txt" :class="'pop-txt-'+(h.popularity<=3?h.popularity:'o')">{{ h.popularity }}人気</span></td>
-              <td><span class="odds-val" :class="oddsClass(h.odds)">{{ h.odds.toFixed(1) }}</span></td>
+              <td><span class="odds-val" :class="scratchedNos.has(h.number) ? 'odds-cancel' : oddsClass(h.odds)">{{ scratchedNos.has(h.number) ? '取消' : h.odds.toFixed(1) }}</span></td>
               <td v-if="raceStatus==='result'">
                 <span v-if="placeOf(h.number)" class="place-chip" :class="'pc-'+Math.min(placeOf(h.number),4)">{{ placeOf(h.number) }}着</span>
               </td>
@@ -748,6 +776,11 @@ function doCharge(amt) {
 .row-1st td { background: #fefce8 !important; }
 .row-2nd td { background: #f8fafc !important; }
 .row-3rd td { background: #fff7ed !important; }
+.row-scratched td { background: #f9fafb !important; opacity: 0.55; text-decoration: line-through; }
+.scratch-badge { display: inline-block; margin-left: 4px; padding: 0 4px; background: #fee2e2; color: #dc2626; font-size: 0.6rem; font-weight: 800; border-radius: 2px; vertical-align: middle; text-decoration: none; }
+.odds-cancel { color: #dc2626; font-weight: 700; text-decoration: none; }
+.jockey-changed { color: #1d4ed8; font-weight: 700; }
+.jockey-orig { color: #9ca3af; font-size: 0.7rem; margin-left: 2px; text-decoration: none; }
 
 /* 枠バッジ (JRA標準色) */
 .frame-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 3px; font-size: 0.72rem; font-weight: 700; }

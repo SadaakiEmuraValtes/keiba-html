@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 import { TEST_USERS } from '../data/users.js'
-import { DATE_SCENARIOS, makeRaceKey, getRaceInfo, getRaceStatus, getWin5RaceKeys, parseRaceKey } from '../data/scenarios.js'
+import { DATE_SCENARIOS, makeRaceKey, getRaceInfo, getRaceStatus, getWin5RaceKeys, parseRaceKey, getActiveEvents } from '../data/scenarios.js'
 import { generateHorses, generateResult, checkComboWin, calcComboPayout } from '../data/masterData.js'
 
 const SESSION_KEY = 'keibanet_session'
@@ -72,8 +72,9 @@ export const store = reactive({
     if (!user) return false
     this.currentUserId = user.id
     if (!this._accounts[user.id]) {
-      this._accounts[user.id] = { balance: 0, bets: [], settledKeys: [] }
+      this._accounts[user.id] = { balance: 0, bets: [], settledKeys: [], processedEventIds: [] }
     }
+    this._processEvents()
     this._saveSession()
     return true
   },
@@ -130,7 +131,10 @@ export const store = reactive({
   setVirtualHour(h) {
     const prev = this.virtualHour
     this.virtualHour = h
-    if (h > prev && this.isLoggedIn) this._settleAllDue()
+    if (h > prev && this.isLoggedIn) {
+      this._processEvents()
+      this._settleAllDue()
+    }
     this._saveSession()
   },
 
@@ -138,6 +142,62 @@ export const store = reactive({
     this.selectedDateIdx = idx
     this.virtualHour = 9
     this._saveSession()
+  },
+
+  // ---- イベント処理（出走取消・除外・競走中止の払い戻し）----
+  _processEvents() {
+    if (!this.isLoggedIn) return
+    const acc = this._accounts[this.currentUserId]
+    if (!acc) return
+    if (!acc.processedEventIds) acc.processedEventIds = []
+
+    const events = getActiveEvents(this.selectedDateIdx, this.virtualHour)
+    let changed = false
+
+    events.forEach(evt => {
+      if (acc.processedEventIds.includes(evt.id)) return
+      const raceKey = makeRaceKey(this.selectedDateIdx, evt.venueSeqIdx, evt.round)
+
+      if (evt.type === 'scratch' || evt.type === 'exclusion') {
+        // 取消/除外馬を含む馬券コンボを払い戻す
+        acc.bets
+          .filter(b => b.raceKey === raceKey && b.status === 'pending')
+          .forEach(bet => {
+            const remaining = []
+            let refundCount = 0
+            bet.combos.forEach(combo => {
+              const nums = combo.split(/[→\-]/).map(Number)
+              if (nums.includes(evt.horseNo)) { refundCount++ }
+              else { remaining.push(combo) }
+            })
+            if (refundCount > 0) {
+              const refund = refundCount * bet.amountPerCombo
+              acc.balance += refund
+              bet.combos = remaining
+              bet.total = remaining.length * bet.amountPerCombo
+              if (remaining.length === 0) { bet.status = 'refunded'; bet.payout = refund }
+            }
+          })
+
+      } else if (evt.type === 'race_cancel') {
+        // 競走中止：対象レースの全馬券を全額払い戻す
+        acc.bets
+          .filter(b => b.raceKey === raceKey && b.status === 'pending')
+          .forEach(bet => {
+            acc.balance += bet.total
+            bet.status = 'refunded'
+            bet.payout = bet.total
+          })
+        // 精算済みにしてsettleAllDueがスキップするよう登録
+        if (!acc.settledKeys.includes(raceKey)) acc.settledKeys.push(raceKey)
+      }
+      // jockey_change は財務処理なし
+
+      acc.processedEventIds.push(evt.id)
+      changed = true
+    })
+
+    if (changed) saveAccounts(this._accounts)
   },
 
   // ---- 全完了レース精算 ----
