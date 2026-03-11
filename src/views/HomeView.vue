@@ -221,6 +221,7 @@ function win5OddsClass(odds) { return odds < 10 ? 'odds-red' : 'odds-black' }
               :class="cellClass(cell)"
               @click="goRace(cell)"
             >
+              <span v-if="gradeOf(cell.grade)" class="grade-chip" :class="'gc-' + gradeOf(cell.grade).toLowerCase()">{{ gradeOf(cell.grade) }}</span>
               <template v-if="cell.status === 'result'">
                 <span class="c-result-txt">確定<br><small>{{ cell.time }}</small></span>
               </template>
@@ -405,7 +406,15 @@ function win5OddsClass(odds) { return odds < 10 ? 'odds-red' : 'odds-black' }
 .th-venue { min-width: 52px; }
 .th-round { min-width: 46px; }
 .schedule-table td { border: 1px solid #e2e8f0; padding: 0; text-align: center; vertical-align: middle; }
-.td-cell { height: 52px; }
+.td-cell { height: 52px; position: relative; }
+.grade-chip {
+  position: absolute; top: 2px; right: 2px;
+  font-size: 0.58rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; line-height: 1;
+  pointer-events: none;
+}
+.gc-gi   { background: #fef3c7; color: #92400e; }
+.gc-gii  { background: #dbeafe; color: #1e40af; }
+.gc-giii { background: #ffedd5; color: #9a3412; }
 .td-venue { background: #f0fdf4; font-weight: 700; font-size: 0.84rem; padding: 4px 8px; white-space: nowrap; border: 1px solid #bbf7d0; color: #166534; }
 
 /* セル状態 */
